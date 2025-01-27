@@ -44,7 +44,6 @@ const columnHeaders = [
 ];
 
 export default function Home() {
-  const [themecolor, setthemecolor] = useState("#ffffff");
   const [dataArray, setDataArray] = useState([]);
   const [columns, setColumns] = useState([]);
   const table = useTable({

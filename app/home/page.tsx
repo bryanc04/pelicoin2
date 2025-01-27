@@ -41,10 +41,6 @@ const Home: React.FC = () => {
     const { data, error } = await supabase.from("Meetings").select();
     if (!error) setMeetings(data);
   };
-  useEffect(() => {
-    fetchMeetings();
-    fetchUserData();
-  }, []);
 
   const buildPieChartData = (userData: any) => {
     const fields = [
@@ -112,6 +108,10 @@ const Home: React.FC = () => {
       }
     }
   };
+  useEffect(() => {
+    fetchMeetings();
+    fetchUserData();
+  }, []);
 
   const handleSignUp = async (meetingTopic: string, attendees: string[]) => {
     setLoading(true);

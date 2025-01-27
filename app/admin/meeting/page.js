@@ -33,10 +33,6 @@ export default function UpcomingMeetings() {
   const [newEventDate, setNewEventDate] = React.useState();
   const { toast } = useToast();
 
-  React.useEffect(() => {
-    fetchData();
-  }, []);
-
   const fetchData = async () => {
     const { data: fetchedData, error } = await supabase
       .from("Meetings")
@@ -54,6 +50,9 @@ export default function UpcomingMeetings() {
       setData(fetchedData || []);
     }
   };
+  React.useEffect(() => {
+    fetchData();
+  }, []);
 
   const handleAddMeeting = async () => {
     if (!newEventName || !newEventDate) {
