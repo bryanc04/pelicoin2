@@ -1,194 +1,110 @@
 "use client";
 
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import Wave from "react-wavify";
-import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogFooter,
-  DialogHeader,
-  DialogTitle,
-  DialogTrigger,
-} from "@/components/ui/dialog";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
 import supabase from "./supabaseClient";
 import { useRouter } from "next/navigation";
+import toast, { Toaster } from "react-hot-toast";
 
 export default function Home() {
-  const [SUname, setSUname] = useState("");
-  const [SUemail, setSUemail] = useState("");
-  const [SUpassword, setSUpassword] = useState("");
-
-  const [SIemail, setSIemail] = useState("");
-  const [SIpassword, setSIpassword] = useState("");
-
   const [loading, setLoading] = useState(false);
   const [message, setMessage] = useState("");
   const router = useRouter();
 
-  // Handle sign-up
-  const handleSignUp = async () => {
+  useEffect(() => {
+    // Check for authentication changes, including OAuth redirects
+    const { data: authListener } = supabase.auth.onAuthStateChange(
+      async (event, session) => {
+        if (event === "SIGNED_IN") {
+          const user = session?.user;
+          console.log(user);
+          if (user) {
+            // Show toast notification for successful sign-in
+            toast("Sign in successful");
+
+            // If the user is an admin (change this to your admin email)
+            if (user.email === "linda_fisher@loomis.org") {
+              router.push("/admin");
+            } else {
+              router.push("/home");
+            }
+          }
+        }
+      }
+    );
+
+    // Handle OAuth redirect
+    const handleRedirect = async () => {
+      const { error } = await supabase.auth.getSession();
+      if (error) {
+        console.error("Error getting session:", error.message);
+      }
+    };
+
+    handleRedirect();
+
+    return () => {
+      authListener?.subscription.unsubscribe();
+    };
+  }, [router, toast]);
+
+  // Handle Microsoft sign-in
+  const handleMicrosoftSignIn = async () => {
     setLoading(true);
     setMessage("");
-    const { error } = await supabase.auth.signUp({
-      email: SUemail,
-      password: SUpassword,
+
+    const { error } = await supabase.auth.signInWithOAuth({
+      provider: "azure",
       options: {
-        data: {
-          full_name: SUname,
-        },
+        scopes: "email profile openid",
+        // You can add additional options like redirectTo if needed
+        // redirectTo: `${window.location.origin}/auth/callback`,
       },
     });
+
     setLoading(false);
     if (error) {
       setMessage(error.message);
-    } else {
-      setMessage(
-        "Sign-up successful! Please check your email for confirmation."
-      );
-    }
-  };
-
-  // Handle sign-in
-  const handleSignIn = async () => {
-    setLoading(true);
-    setMessage("");
-    const { error } = await supabase.auth.signInWithPassword({
-      email: SIemail,
-      password: SIpassword,
-    });
-    setLoading(false);
-    if (error) {
-      setMessage(error.message);
-    } else {
-      if (SIemail == "linda_fisher@loomis.org") {
-        router.push("/admin");
-      } else {
-        router.push("/home");
-      }
-
-      setMessage("Sign-in successful!");
     }
   };
 
   return (
     <div className="items-center justify-items-center min-h-screen sm:p-20 font-[family-name:var(--font-geist-sans)]">
+      <Toaster />
       <div className="text-center text-5xl font-bold mt-[20%] relative">
-        pelicoin banking, <br /> made easy
+        Pelicoin banking, <br /> made easy
       </div>
-      <div>
-        <div className="grid grid-cols-[45%_45%] gap-4 mt-[30px] w-[fit-content] ml-[auto] mr-[auto]">
-          {/* Sign Up Dialog */}
-          <Dialog>
-            <DialogTrigger asChild>
-              <Button variant="outline">Sign up</Button>
-            </DialogTrigger>
-            <DialogContent className="sm:max-w-[425px]">
-              <DialogHeader>
-                <DialogTitle>Sign up</DialogTitle>
-                <DialogDescription>
-                  Enter details for your new account.
-                </DialogDescription>
-              </DialogHeader>
-              <div className="grid gap-4 py-4">
-                <div className="grid grid-cols-4 items-center gap-4">
-                  <Label htmlFor="name" className="text-right">
-                    Full name
-                  </Label>
-                  <Input
-                    id="name"
-                    value={SUname}
-                    onChange={(e) => setSUname(e.target.value)}
-                    className="col-span-3"
-                  />
-                </div>
-                <div className="grid grid-cols-4 items-center gap-4">
-                  <Label htmlFor="email" className="text-right">
-                    Email
-                  </Label>
-                  <Input
-                    id="email"
-                    value={SUemail}
-                    onChange={(e) => setSUemail(e.target.value)}
-                    className="col-span-3"
-                  />
-                </div>
-                <div className="grid grid-cols-4 items-center gap-4">
-                  <Label htmlFor="password" className="text-right">
-                    Password
-                  </Label>
-                  <Input
-                    id="password"
-                    type="password"
-                    value={SUpassword}
-                    onChange={(e) => setSUpassword(e.target.value)}
-                    className="col-span-3"
-                  />
-                </div>
-              </div>
-              <DialogFooter>
-                <Button onClick={handleSignUp} disabled={loading}>
-                  {loading ? "Signing up..." : "Complete"}
-                </Button>
-              </DialogFooter>
-              {message && (
-                <p className="text-center text-red-500 mt-2">{message}</p>
-              )}
-            </DialogContent>
-          </Dialog>
-
-          {/* Sign In Dialog */}
-          <Dialog>
-            <DialogTrigger asChild>
-              <Button>Sign in</Button>
-            </DialogTrigger>
-            <DialogContent className="sm:max-w-[425px]">
-              <DialogHeader>
-                <DialogTitle>Sign in</DialogTitle>
-                <DialogDescription>
-                  Enter your email and password to sign in.
-                </DialogDescription>
-              </DialogHeader>
-              <div className="grid gap-4 py-4">
-                <div className="grid grid-cols-4 items-center gap-4">
-                  <Label htmlFor="email" className="text-right">
-                    Email
-                  </Label>
-                  <Input
-                    id="email"
-                    value={SIemail}
-                    onChange={(e) => setSIemail(e.target.value)}
-                    className="col-span-3"
-                  />
-                </div>
-                <div className="grid grid-cols-4 items-center gap-4">
-                  <Label htmlFor="password" className="text-right">
-                    Password
-                  </Label>
-                  <Input
-                    id="password"
-                    type="password"
-                    value={SIpassword}
-                    onChange={(e) => setSIpassword(e.target.value)}
-                    className="col-span-3"
-                  />
-                </div>
-              </div>
-              <DialogFooter>
-                <Button onClick={handleSignIn} disabled={loading}>
-                  {loading ? "Signing in..." : "Sign in"}
-                </Button>
-              </DialogFooter>
-              {message && (
-                <p className="text-center text-red-500 mt-2">{message}</p>
-              )}
-            </DialogContent>
-          </Dialog>
+      <div className="flex justify-center mt-[30px]">
+        {/* Microsoft Sign In Button with Always-Visible Rainbow Border */}
+        <div className="microsoft-btn-container">
+          <Button
+            onClick={handleMicrosoftSignIn}
+            disabled={loading}
+            className="microsoft-signin-btn flex items-center gap-2"
+          >
+            {loading ? (
+              "Signing in..."
+            ) : (
+              <>
+                <svg
+                  xmlns="http://www.w3.org/2000/svg"
+                  width="16"
+                  height="16"
+                  viewBox="0 0 23 23"
+                >
+                  <path fill="#f1511b" d="M1 1h10v10H1z" />
+                  <path fill="#80cc28" d="M12 1h10v10H12z" />
+                  <path fill="#00adef" d="M1 12h10v10H1z" />
+                  <path fill="#fbbc09" d="M12 12h10v10H12z" />
+                </svg>
+                Sign in with Microsoft
+              </>
+            )}
+          </Button>
         </div>
       </div>
+      {message && <p className="text-center text-red-500 mt-4">{message}</p>}
       <Wave
         fill="black"
         paused={false}
@@ -206,6 +122,54 @@ export default function Home() {
           points: 4,
         }}
       />
+
+      {/* Add styles for the always-visible rainbow animation */}
+      <style jsx>{`
+        .microsoft-btn-container {
+          position: relative;
+          display: inline-block;
+          border-radius: 0.375rem;
+          padding: 2px;
+          background: linear-gradient(
+            90deg,
+            rgb(255, 0, 255),
+            /* Bright magenta */ rgb(255, 0, 0),
+            /* Bright red */ rgb(255, 255, 0),
+            /* Bright yellow */ rgb(0, 255, 0),
+            /* Bright green */ rgb(0, 255, 255),
+            /* Bright cyan */ rgb(0, 0, 255),
+            /* Bright blue */ rgb(255, 0, 255) /* Bright magenta again */
+          );
+          background-size: 200% 200%;
+          animation: rainbow-move 3s linear infinite;
+        }
+
+        /* Make sure the button itself preserves its styling */
+        .microsoft-signin-btn {
+          background-color: white;
+          color: black;
+        }
+
+        /* Dark mode support */
+        @media (prefers-color-scheme: dark) {
+          .microsoft-signin-btn {
+            background-color: #1e293b;
+            color: white;
+          }
+        }
+
+        @keyframes rainbow-move {
+          0% {
+            background-position: 0% 50%;
+          }
+          50% {
+            background-position: 100% 50%;
+          }
+          100% {
+            background-position: 0% 50%;
+          }
+        }
+      `}</style>
     </div>
   );
 }

@@ -1,5 +1,4 @@
 "use client";
-import Image from "next/image";
 
 import React, { useState, useEffect } from "react";
 import { Pie } from "react-chartjs-2";
@@ -7,8 +6,6 @@ import { Chart as ChartJS, ArcElement, Tooltip, Legend } from "chart.js";
 import {
   Dialog,
   DialogContent,
-  DialogDescription,
-  DialogFooter,
   DialogHeader,
   DialogTitle,
   DialogTrigger,
@@ -25,18 +22,18 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
-import fullTicket from "../../public/ticket.png";
-import emptyTicket from "../../public/tickete.png";
+
+import fullTicket from "@/public/ticket.png";
+import emptyTicket from "@/public/tickete.png";
+
 ChartJS.register(ArcElement, Tooltip, Legend);
 
 const Home: React.FC = () => {
   const [curUser, setCurUser] = useState<any>({});
   const [piechartData, setPiechartData] = useState<any>(null);
   const [meetings, setMeetings] = useState<any[]>([]);
-  const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [loading, setLoading] = useState(false);
+
   const fetchMeetings = async () => {
     const { data, error } = await supabase.from("Meetings").select();
     if (!error) setMeetings(data);
@@ -141,6 +138,25 @@ const Home: React.FC = () => {
     }
     setLoading(false);
   };
+  // useEffect(() => {
+  //   console.log(curUser);
+  //   if (curUser.user == null) {
+  //     window.location.href = "/";
+  //   }
+  // }, []);
+
+  // Handle sign out function
+  const handleSignOut = async () => {
+    try {
+      const { error } = await supabase.auth.signOut();
+      if (error) throw error;
+      // Redirect to login page or home page after sign out
+      window.location.href = "/"; // Or wherever your login page is
+    } catch (error) {
+      console.error("Error signing out:", error);
+      alert("Failed to sign out. Please try again.");
+    }
+  };
 
   return (
     <div
@@ -156,10 +172,17 @@ const Home: React.FC = () => {
           width: "70vw",
         }}
       >
-        <header className="mb-6">
+        <header className="mb-6 flex justify-between items-center">
           <h1 className="text-3xl font-bold">
-            Hello, {curUser["First Name"] || "User"}!
+            Hi, {curUser["First Name"] || "User"}!
           </h1>
+          <Button
+            onClick={handleSignOut}
+            variant="outline"
+            className="bg-red-50 hover:bg-red-100 text-red-600 border-red-300"
+          >
+            Sign Out
+          </Button>
         </header>
 
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
@@ -639,9 +662,9 @@ const Home: React.FC = () => {
         {/* Ticket Status */}
         <div className="mt-6 p-4 bg-white shadow rounded-lg">
           <h2 className="text-xl font-semibold">Ticket Status</h2>
-          <Image
+          <img
             alt="ticket"
-            src={curUser["Ticket"] == 1 ? fullTicket : emptyTicket}
+            src={curUser["Ticket"] == 1 ? "/ticket.png" : "/tickete.png"}
             style={{
               marginLeft: "auto",
               marginRight: "auto",
