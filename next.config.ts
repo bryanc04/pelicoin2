@@ -6,6 +6,7 @@ const nextConfig: NextConfig = {
     ignoreDuringBuilds: true,
   },
   output: "standalone", // Ensures the app can run dynamically
+  trailingSlash: true,
 };
 
 export default nextConfig;
