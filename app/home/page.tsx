@@ -22,9 +22,7 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
-
-import fullTicket from "@/public/ticket.png";
-import emptyTicket from "@/public/tickete.png";
+import { useRouter } from "next/navigation";
 
 ChartJS.register(ArcElement, Tooltip, Legend);
 
@@ -32,11 +30,13 @@ const Home: React.FC = () => {
   const [curUser, setCurUser] = useState<any>({});
   const [piechartData, setPiechartData] = useState<any>(null);
   const [meetings, setMeetings] = useState<any[]>([]);
-  const [loading, setLoading] = useState(false);
+  const [loading, setLoading] = useState(true);
+  const [isAuthenticated, setIsAuthenticated] = useState(false);
+  const router = useRouter();
 
   const fetchMeetings = async () => {
     const { data, error } = await supabase.from("Meetings").select();
-    if (!error) setMeetings(data);
+    if (!error) setMeetings(data || []);
   };
 
   const buildPieChartData = (userData: any) => {
@@ -76,39 +76,83 @@ const Home: React.FC = () => {
     });
   };
 
+  // Check auth status on mount and when page hydrates
+  useEffect(() => {
+    const checkAuth = async () => {
+      setLoading(true);
+      try {
+        const { data } = await supabase.auth.getSession();
+
+        if (!data.session) {
+          // No active session, redirect to login
+          router.replace("/");
+          return;
+        }
+
+        setIsAuthenticated(true);
+        await fetchUserData();
+        await fetchMeetings();
+      } catch (error) {
+        console.error("Auth check error:", error);
+        router.replace("/");
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    // Listen for auth state changes
+    const { data: authListener } = supabase.auth.onAuthStateChange(
+      (event, session) => {
+        if (event === "SIGNED_OUT") {
+          router.replace("/");
+        } else if (event === "SIGNED_IN" && session) {
+          setIsAuthenticated(true);
+          fetchUserData();
+          fetchMeetings();
+        }
+      }
+    );
+
+    checkAuth();
+
+    return () => {
+      authListener?.subscription.unsubscribe();
+    };
+  }, [router]);
+
   const fetchUserData = async () => {
-    const { data: user } = await supabase.auth.getUser();
-    console.log(user);
-    if (user) {
-      console.log(user.user?.email);
+    try {
+      const { data: user } = await supabase.auth.getUser();
+
+      if (!user?.user?.email) {
+        return;
+      }
+
       const { data, error } = await supabase.from("Pelicoin balances").select();
 
-      console.log(data);
-
-      if (error) throw error;
+      if (error) {
+        throw error;
+      }
 
       if (data && data.length > 0) {
         let userData = null;
         data.forEach((u) => {
           if (u.Email && user.user?.email) {
-            if (u.Email.toLowerCase() == user.user?.email.toLowerCase()) {
+            if (u.Email.toLowerCase() === user.user?.email.toLowerCase()) {
               userData = u;
-              console.log(userData);
             }
           }
         });
 
-        if (!error && data.length > 0) {
+        if (userData) {
           setCurUser(userData);
           buildPieChartData(userData);
         }
       }
+    } catch (error) {
+      console.error("Error fetching user data:", error);
     }
   };
-  useEffect(() => {
-    fetchMeetings();
-    fetchUserData();
-  }, []);
 
   const handleSignUp = async (meetingTopic: string, attendees: string[]) => {
     setLoading(true);
@@ -138,12 +182,6 @@ const Home: React.FC = () => {
     }
     setLoading(false);
   };
-  // useEffect(() => {
-  //   console.log(curUser);
-  //   if (curUser.user == null) {
-  //     window.location.href = "/";
-  //   }
-  // }, []);
 
   // Handle sign out function
   const handleSignOut = async () => {
@@ -151,12 +189,27 @@ const Home: React.FC = () => {
       const { error } = await supabase.auth.signOut();
       if (error) throw error;
       // Redirect to login page or home page after sign out
-      window.location.href = "/"; // Or wherever your login page is
+      router.replace("/");
     } catch (error) {
       console.error("Error signing out:", error);
       alert("Failed to sign out. Please try again.");
     }
   };
+
+  // Show loading state
+  if (loading) {
+    return (
+      <div className="flex items-center justify-center min-h-screen">
+        <div className="text-center">
+          <p className="text-xl">Loading...</p>
+        </div>
+      </div>
+    );
+  }
+
+  if (!isAuthenticated) {
+    return null; // Let the router handle the redirect
+  }
 
   return (
     <div
@@ -626,36 +679,42 @@ const Home: React.FC = () => {
           {/* Meetings */}
           <div className="p-4 bg-white shadow rounded-lg">
             <h2 className="text-xl font-semibold mb-4">Upcoming Meetings</h2>
-            <ul className="space-y-4">
-              {meetings.map((meeting) => (
-                <li
-                  key={meeting.Topic}
-                  className="flex justify-between items-center"
-                >
-                  <div>
-                    <h3 className="font-bold">{meeting.Topic}</h3>
-                    <p className="text-sm text-gray-500">
-                      {new Date(meeting.Date).toLocaleString()}
-                    </p>
-                  </div>
-                  <Button
-                    className="ml-4"
-                    disabled={meeting.Attendees.includes(
-                      curUser["First Name"] + " " + curUser["Last Name"]
-                    )}
-                    onClick={() =>
-                      handleSignUp(meeting.Topic, meeting.Attendees)
-                    }
+            {meetings.length > 0 ? (
+              <ul className="space-y-4">
+                {meetings.map((meeting) => (
+                  <li
+                    key={meeting.Topic}
+                    className="flex justify-between items-center"
                   >
-                    {meeting.Attendees.includes(
-                      curUser["First Name"] + " " + curUser["Last Name"]
-                    )
-                      ? "Signed Up"
-                      : "Sign Up"}
-                  </Button>
-                </li>
-              ))}
-            </ul>
+                    <div>
+                      <h3 className="font-bold">{meeting.Topic}</h3>
+                      <p className="text-sm text-gray-500">
+                        {new Date(meeting.Date).toLocaleString()}
+                      </p>
+                    </div>
+                    <Button
+                      className="ml-4"
+                      disabled={
+                        meeting.Attendees?.includes(
+                          curUser["First Name"] + " " + curUser["Last Name"]
+                        ) || loading
+                      }
+                      onClick={() =>
+                        handleSignUp(meeting.Topic, meeting.Attendees || [])
+                      }
+                    >
+                      {meeting.Attendees?.includes(
+                        curUser["First Name"] + " " + curUser["Last Name"]
+                      )
+                        ? "Signed Up"
+                        : "Sign Up"}
+                    </Button>
+                  </li>
+                ))}
+              </ul>
+            ) : (
+              <p>No upcoming meetings</p>
+            )}
           </div>
         </div>
 
