@@ -2,10 +2,17 @@ import type { NextConfig } from "next";
 /** @type {import('next').NextConfig} */
 
 const nextConfig: NextConfig = {
+  async rewrites() {
+    return [
+      {
+        source: "/home",
+        destination: "/home", // Ensures Next.js handles it properly
+      },
+    ];
+  },
   eslint: {
     ignoreDuringBuilds: true,
   },
-  output: "standalone", // Ensures the app can run dynamically
   trailingSlash: true,
 };
 
