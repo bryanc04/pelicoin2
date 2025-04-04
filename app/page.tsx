@@ -1,16 +1,28 @@
 "use client";
 
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import { Button } from "@/components/ui/button";
 import Wave from "react-wavify";
 import supabase from "./supabaseClient";
 import { useRouter } from "next/navigation";
 import toast, { Toaster } from "react-hot-toast";
 
+// Define the coin type
+interface Coin {
+  id: string;
+  x: number;
+  y: number;
+  velocity: number;
+  size: number;
+}
+
 export default function Home() {
   const [loading, setLoading] = useState(false);
   const [message, setMessage] = useState("");
+  const [coins, setCoins] = useState<Coin[]>([]); // Properly typed state
   const router = useRouter();
+  const animationRef = useRef<number | null>(null);
+  const lastCoinTimeRef = useRef(0);
 
   useEffect(() => {
     // Check for authentication changes, including OAuth redirects
@@ -44,10 +56,60 @@ export default function Home() {
 
     handleRedirect();
 
+    // Get viewport dimensions
+    const screenWidth = window.innerWidth;
+    const screenHeight = window.innerHeight;
+    const waveHeight = screenHeight * 0.35; // The wave takes up 35% of the screen
+    const waveTop = screenHeight - waveHeight; // Y-position where the wave starts
+
+    // Function to create a new coin
+    const createCoin = () => {
+      const now = Date.now();
+      // Only create a new coin if enough time has passed (150-300ms)
+      if (now - lastCoinTimeRef.current > Math.random() * 400 + 300) {
+        lastCoinTimeRef.current = now;
+
+        const newCoin: Coin = {
+          id: Math.random().toString(),
+          x: Math.random() * screenWidth, // Random horizontal position
+          y: -50, // Start above viewport
+          velocity: 1 + Math.random() * 2, // Random initial velocity
+          size: 45 + Math.random() * 15, // Random size between 30-60px
+        };
+
+        setCoins((prevCoins) => [...prevCoins, newCoin]);
+      }
+    };
+
+    // Function to animate all coins
+    const animateCoins = () => {
+      createCoin();
+
+      setCoins((prevCoins) =>
+        prevCoins
+          .map((coin) => ({
+            ...coin,
+            y: coin.y + coin.velocity,
+            velocity: coin.velocity + 0.1, // Add gravity effect
+          }))
+          // Remove coins that have touched the wave
+          .filter((coin) => coin.y < waveTop)
+      );
+
+      animationRef.current = requestAnimationFrame(animateCoins);
+    };
+
+    // Start animation
+    animationRef.current = requestAnimationFrame(animateCoins);
+
+    // Cleanup function
     return () => {
       authListener?.subscription.unsubscribe();
+      if (animationRef.current) {
+        cancelAnimationFrame(animationRef.current);
+      }
     };
-  }, [router, toast]);
+  }, [router]);
 
   // Handle Microsoft sign-in
   const handleMicrosoftSignIn = async () => {
@@ -70,8 +132,30 @@ export default function Home() {
   };
 
   return (
-    <div className="items-center justify-items-center min-h-screen sm:p-20 font-[family-name:var(--font-geist-sans)]">
+    <div className="items-center justify-items-center min-h-screen sm:p-20 font-[family-name:var(--font-geist-sans)] relative overflow-hidden">
       <Toaster />
+
+      {/* Render all falling coins */}
+      {coins.map((coin) => (
+        <div
+          key={coin.id}
+          style={{
+            position: "absolute",
+            left: `${coin.x}px`,
+            top: `${coin.y}px`,
+            zIndex: 0,
+          }}
+        >
+          <img
+            src="/pelicoin.png"
+            alt="Pelicoin"
+            width={coin.size}
+            height={coin.size}
+            style={{ zIndex: 0 }}
+          />
+        </div>
+      ))}
+
       <div className="text-center text-5xl font-bold mt-[20%] relative">
         Pelicoin banking, <br /> made easy
       </div>
