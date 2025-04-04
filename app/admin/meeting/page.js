@@ -2,7 +2,7 @@
 
 import React from "react";
 import { format } from "date-fns";
-import { Calendar as CalendarIcon, Trash2 } from "lucide-react";
+import { Calendar as CalendarIcon, Clock, Trash2 } from "lucide-react";
 import supabase from "../../supabaseClient";
 
 import { Button } from "@/components/ui/button";
@@ -23,15 +23,50 @@ import {
   PopoverContent,
   PopoverTrigger,
 } from "@/components/ui/popover";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import { cn } from "@/lib/utils";
 import { useToast } from "@/hooks/use-toast";
 import { SidebarProvider, SidebarTrigger } from "@/components/ui/sidebar";
 import { AppSidebar } from "@/components/ui/app-sidebar";
+
 export default function UpcomingMeetings() {
   const [data, setData] = React.useState([]);
   const [newEventName, setNewEventName] = React.useState("");
   const [newEventDate, setNewEventDate] = React.useState();
+  const [newEventTime, setNewEventTime] = React.useState("");
   const { toast } = useToast();
+
+  // Generate time options for every 30 minutes
+  const generateTimeOptions = () => {
+    const times = [];
+    for (let hour = 0; hour < 24; hour++) {
+      for (let minute of [0, 30]) {
+        const hourFormatted = hour.toString().padStart(2, "0");
+        const minuteFormatted = minute.toString().padStart(2, "0");
+        const time = `${hourFormatted}:${minuteFormatted}`;
+        const display = formatTimeForDisplay(time);
+        times.push({ value: time, display });
+      }
+    }
+    return times;
+  };
+
+  // Format time from 24h to 12h format for display
+  const formatTimeForDisplay = (time) => {
+    const [hours, minutes] = time.split(":");
+    const hour = parseInt(hours, 10);
+    const ampm = hour >= 12 ? "PM" : "AM";
+    const hour12 = hour % 12 || 12;
+    return `${hour12}:${minutes} ${ampm}`;
+  };
+
+  const timeOptions = generateTimeOptions();
 
   const fetchData = async () => {
     const { data: fetchedData, error } = await supabase
@@ -50,23 +85,29 @@ export default function UpcomingMeetings() {
       setData(fetchedData || []);
     }
   };
+
   React.useEffect(() => {
     fetchData();
   }, []);
 
   const handleAddMeeting = async () => {
-    if (!newEventName || !newEventDate) {
+    if (!newEventName || !newEventDate || !newEventTime) {
       toast({
         title: "Error",
-        description: "Please fill in both the topic and date",
+        description: "Please fill in the topic, date, and time",
         variant: "destructive",
       });
       return;
     }
 
+    // Combine date and time
+    const combinedDateTime = new Date(newEventDate);
+    const [hours, minutes] = newEventTime.split(":");
+    combinedDateTime.setHours(parseInt(hours), parseInt(minutes), 0, 0);
+
     const newMeeting = {
       Topic: newEventName,
-      Date: newEventDate.toISOString(),
+      Date: combinedDateTime.toISOString(),
       Attendees: [],
       id: data.length + 1,
     };
@@ -88,6 +129,7 @@ export default function UpcomingMeetings() {
       });
       setNewEventName("");
       setNewEventDate(undefined);
+      setNewEventTime("");
       fetchData();
     }
   };
@@ -176,7 +218,7 @@ export default function UpcomingMeetings() {
                 <p className="text-muted-foreground">No meetings found.</p>
               )}
             </ScrollArea>
-            <div className="grid grid-cols-2 gap-4 mt-4">
+            <div className="grid grid-cols-3 gap-4 mt-4">
               <Input
                 placeholder="Meeting Topic"
                 value={newEventName}
@@ -208,6 +250,25 @@ export default function UpcomingMeetings() {
                   />
                 </PopoverContent>
               </Popover>
+              <Select value={newEventTime} onValueChange={setNewEventTime}>
+                <SelectTrigger className="w-full">
+                  <div className="flex items-center">
+                    <Clock className="mr-2 h-4 w-4" />
+                    {newEventTime ? (
+                      formatTimeForDisplay(newEventTime)
+                    ) : (
+                      <span className="text-muted-foreground">Select time</span>
+                    )}
+                  </div>
+                </SelectTrigger>
+                <SelectContent className="h-64">
+                  {timeOptions.map((time) => (
+                    <SelectItem key={time.value} value={time.value}>
+                      {time.display}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
             </div>
             <Button onClick={handleAddMeeting} className="mt-4">
               Add Meeting
