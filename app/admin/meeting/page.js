@@ -33,8 +33,6 @@ export default function UpcomingMeetings() {
   const [newEventName, setNewEventName] = React.useState("");
   const [newEventDate, setNewEventDate] = React.useState();
   const [newEventTime, setNewEventTime] = React.useState("");
-  const emailRef = useRef < HTMLInputElement > "";
-  const nameRef = useRef < HTMLInputElement > "";
 
   const { toast } = useToast();
   useEffect(() => emailjs.init("D6aKMxno3vr0IgN3e"), []);
