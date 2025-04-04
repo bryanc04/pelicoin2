@@ -4,7 +4,7 @@ import React from "react";
 import { format } from "date-fns";
 import { Calendar as CalendarIcon, Clock, Trash2 } from "lucide-react";
 import supabase from "../../supabaseClient";
-
+import { useRef, useEffect, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import {
@@ -23,39 +23,50 @@ import {
   PopoverContent,
   PopoverTrigger,
 } from "@/components/ui/popover";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
 import { cn } from "@/lib/utils";
 import { useToast } from "@/hooks/use-toast";
 import { SidebarProvider, SidebarTrigger } from "@/components/ui/sidebar";
 import { AppSidebar } from "@/components/ui/app-sidebar";
-
+import emailjs from "@emailjs/browser";
 export default function UpcomingMeetings() {
   const [data, setData] = React.useState([]);
   const [newEventName, setNewEventName] = React.useState("");
   const [newEventDate, setNewEventDate] = React.useState();
   const [newEventTime, setNewEventTime] = React.useState("");
+  const emailRef = useRef < HTMLInputElement > "";
+  const nameRef = useRef < HTMLInputElement > "";
+
   const { toast } = useToast();
+  useEffect(() => emailjs.init("D6aKMxno3vr0IgN3e"), []);
+  // Add these
+  const handleSubmit = async (e) => {
+    const serviceId = "service_51uk45n";
+    const templateId = "template_z6zefyv";
+    try {
+      await emailjs.send(serviceId, templateId, {
+        name: "Bryan Chung",
+        recipient: "bryan_chung@loomis.org",
+      });
+      toast.success("Email sent to bryan_chung@loomis.org");
+    } catch (error) {
+      console.log(error);
+    } finally {
+    }
+  };
 
   // Generate time options for every 30 minutes
-  const generateTimeOptions = () => {
+  const timeOptions = React.useMemo(() => {
     const times = [];
     for (let hour = 0; hour < 24; hour++) {
       for (let minute of [0, 30]) {
         const hourFormatted = hour.toString().padStart(2, "0");
         const minuteFormatted = minute.toString().padStart(2, "0");
         const time = `${hourFormatted}:${minuteFormatted}`;
-        const display = formatTimeForDisplay(time);
-        times.push({ value: time, display });
+        times.push(time);
       }
     }
     return times;
-  };
+  }, []);
 
   // Format time from 24h to 12h format for display
   const formatTimeForDisplay = (time) => {
@@ -65,8 +76,6 @@ export default function UpcomingMeetings() {
     const hour12 = hour % 12 || 12;
     return `${hour12}:${minutes} ${ampm}`;
   };
-
-  const timeOptions = generateTimeOptions();
 
   const fetchData = async () => {
     const { data: fetchedData, error } = await supabase
@@ -109,7 +118,7 @@ export default function UpcomingMeetings() {
       Topic: newEventName,
       Date: combinedDateTime.toISOString(),
       Attendees: [],
-      id: data.length + 1,
+      id: Math.floor(Math.random() * 1000000000000000),
     };
     console.log(newMeeting);
 
@@ -127,6 +136,7 @@ export default function UpcomingMeetings() {
         title: "Success",
         description: "Meeting added successfully",
       });
+      handleSubmit();
       setNewEventName("");
       setNewEventDate(undefined);
       setNewEventTime("");
@@ -134,11 +144,11 @@ export default function UpcomingMeetings() {
     }
   };
 
-  const handleDeleteMeeting = async (topic) => {
+  const handleDeleteMeeting = async (topic, date) => {
     const { error } = await supabase
       .from("Meetings")
       .delete()
-      .match({ Topic: topic });
+      .match({ Topic: topic, Date: date });
 
     if (error) {
       console.error("Error deleting meeting:", error);
@@ -194,7 +204,7 @@ export default function UpcomingMeetings() {
                   </TableHeader>
                   <TableBody>
                     {data.map((row) => (
-                      <TableRow key={row.Topic}>
+                      <TableRow key={Math.random() * 10}>
                         <TableCell>{row.Topic}</TableCell>
                         <TableCell>{formatDate(row.Date)}</TableCell>
                         <TableCell>
@@ -204,7 +214,9 @@ export default function UpcomingMeetings() {
                           <Button
                             variant="ghost"
                             size="icon"
-                            onClick={() => handleDeleteMeeting(row.Topic)}
+                            onClick={() =>
+                              handleDeleteMeeting(row.Topic, row.Date)
+                            }
                             className="text-red-500 hover:text-red-700"
                           >
                             <Trash2 className="h-5 w-5" />
@@ -250,25 +262,40 @@ export default function UpcomingMeetings() {
                   />
                 </PopoverContent>
               </Popover>
-              <Select value={newEventTime} onValueChange={setNewEventTime}>
-                <SelectTrigger className="w-full">
-                  <div className="flex items-center">
+              <Popover>
+                <PopoverTrigger asChild>
+                  <Button
+                    variant="outline"
+                    className={cn(
+                      "w-full justify-start text-left font-normal",
+                      !newEventTime && "text-muted-foreground"
+                    )}
+                  >
                     <Clock className="mr-2 h-4 w-4" />
                     {newEventTime ? (
                       formatTimeForDisplay(newEventTime)
                     ) : (
-                      <span className="text-muted-foreground">Select time</span>
+                      <span>Select time</span>
                     )}
-                  </div>
-                </SelectTrigger>
-                <SelectContent className="h-64">
-                  {timeOptions.map((time) => (
-                    <SelectItem key={time.value} value={time.value}>
-                      {time.display}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
+                  </Button>
+                </PopoverTrigger>
+                <PopoverContent className="w-64 p-0">
+                  <ScrollArea className="h-72">
+                    <div className="grid grid-cols-1 gap-1 p-2">
+                      {timeOptions.map((time) => (
+                        <Button
+                          key={Math.random() * 10}
+                          variant={newEventTime === time ? "default" : "ghost"}
+                          className="justify-start text-left"
+                          onClick={() => setNewEventTime(time)}
+                        >
+                          {formatTimeForDisplay(time)}
+                        </Button>
+                      ))}
+                    </div>
+                  </ScrollArea>
+                </PopoverContent>
+              </Popover>
             </div>
             <Button onClick={handleAddMeeting} className="mt-4">
               Add Meeting
