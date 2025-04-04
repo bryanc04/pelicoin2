@@ -45,7 +45,7 @@ export default function UpcomingMeetings() {
         name: "Bryan Chung",
         recipient: "bryan_chung@loomis.org",
       });
-      toast.success("Email sent to bryan_chung@loomis.org");
+      toast("Email sent to bryan_chung@loomis.org");
     } catch (error) {
       console.log(error);
     } finally {
