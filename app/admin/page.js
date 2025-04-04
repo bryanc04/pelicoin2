@@ -11,6 +11,8 @@ import { Button, Upload, message } from "antd";
 import supabase from "../supabaseClient.js"; // Import your Supabase client setup
 import { SidebarProvider, SidebarTrigger } from "@/components/ui/sidebar";
 import { AppSidebar } from "@/components/ui/app-sidebar";
+import toast, { Toaster } from "react-hot-toast";
+
 const columnHeaders = [
   "Student",
   "Grad Year",
@@ -59,7 +61,7 @@ export default function Home() {
       const { data, error } = await supabase.from("Pelicoin balances").select();
       if (error) {
         console.error("Error fetching data:", error);
-        message.error("Failed to fetch data");
+        toast.error("Failed to fetch data");
       } else {
         setDataArray(data.map((row, index) => ({ ...row, id: index + 1 })));
       }
@@ -85,8 +87,8 @@ export default function Home() {
         const { data, errors } = result;
 
         if (errors.length > 0) {
-          message.error("Error parsing CSV file");
-          console.error(errors);
+          toast.error("Error parsing CSV file");
+          toast.error(errors);
           return;
         }
 
@@ -99,9 +101,9 @@ export default function Home() {
 
         if (error) {
           console.error("Error updating Supabase:", error);
-          message.error("Failed to update data in Supabase");
+          toast.error("Failed to update data in Supabase");
         } else {
-          message.success("Data successfully uploaded");
+          toast.success("Data successfully uploaded");
           setDataArray(data.map((row, index) => ({ ...row, id: index + 1 })));
         }
       },
@@ -111,7 +113,7 @@ export default function Home() {
   const updateCells = async () => {
     if (kaPropsUtils.isValid(table.props)) {
       table.saveAllEditors();
-      message.success("Data saved locally");
+      toast.success("Data saved locally");
 
       // Save updated data back to Supabase
       const { error } = await supabase
@@ -120,9 +122,9 @@ export default function Home() {
 
       if (error) {
         console.error("Error saving data to Supabase:", error);
-        message.error("Failed to save data to Supabase");
+        toast.error("Failed to save data to Supabase");
       } else {
-        message.success("Data saved to Supabase");
+        toast.success("Data saved to Supabase");
       }
     } else {
       table.validate(); // Validate the table if not valid
@@ -132,6 +134,7 @@ export default function Home() {
   return (
     <>
       {" "}
+      <Toaster />
       <SidebarProvider>
         <AppSidebar />
         <SidebarTrigger />
