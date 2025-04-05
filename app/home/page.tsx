@@ -148,8 +148,14 @@ const Home: React.FC = () => {
         data.forEach((u) => {
           console.log(u);
           console.log(user);
-          if (u.Email && user.user?.email) {
-            if (u.Email.toLowerCase() === user.user?.email.toLowerCase()) {
+          if (
+            u["SIS Login ID"] &&
+            user.user["user_metadata"]["preferred_username"]
+          ) {
+            if (
+              u["SIS Login ID"].toLowerCase() ===
+              user.user["user_metadata"]["preferred_username"].toLowerCase()
+            ) {
               userData = u;
             }
           }
