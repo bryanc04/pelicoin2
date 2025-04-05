@@ -325,7 +325,7 @@ const AdminStudentView = () => {
                             <TabsContent value="financial">
                               <Table>
                                 <TableCaption>
-                                  Student's financial statement
+                                  Your financial statment.
                                 </TableCaption>
                                 <TableHeader>
                                   <TableRow>
@@ -368,15 +368,150 @@ const AdminStudentView = () => {
                                     <TableCell>{studentData["Cash"]}</TableCell>
                                     <TableCell className="text-right"></TableCell>
                                   </TableRow>
-                                  {/* Additional table rows same as original - removed for brevity */}
-                                  {/* Insert the remaining financial statement table rows here */}
+                                  <TableRow>
+                                    <TableCell className="font-medium"></TableCell>
+                                    <TableCell>Current Stocks</TableCell>
+                                    <TableCell>
+                                      {studentData["Current Stocks"]}
+                                    </TableCell>
+                                    <TableCell className="text-right"></TableCell>
+                                  </TableRow>
+                                  <TableRow>
+                                    <TableCell className="font-medium"></TableCell>
+                                    <TableCell>Current Bonds</TableCell>
+                                    <TableCell>
+                                      {studentData["Current Bonds"]}
+                                    </TableCell>
+                                    <TableCell className="text-right"></TableCell>
+                                  </TableRow>
+                                  <TableRow>
+                                    <TableCell className="font-medium"></TableCell>
+                                    <TableCell>SMG</TableCell>
+                                    <TableCell>{studentData["SMG"]}</TableCell>
+                                    <TableCell className="text-right"></TableCell>
+                                  </TableRow>
+                                  <TableRow>
+                                    <TableCell className="font-medium">
+                                      Year +1
+                                    </TableCell>
+                                    <TableCell></TableCell>
+                                    <TableCell></TableCell>
+                                    <TableCell className="text-right">
+                                      {(
+                                        studentData["Stocks +1"] +
+                                        studentData["Bonds +1"]
+                                      ).toFixed(2) || "N/A"}
+                                    </TableCell>
+                                  </TableRow>
+                                  <TableRow>
+                                    <TableCell className="font-medium"></TableCell>
+                                    <TableCell>Stocks +1</TableCell>
+                                    <TableCell>
+                                      {studentData["Stocks +1"]}
+                                    </TableCell>
+                                    <TableCell className="text-right"></TableCell>
+                                  </TableRow>
+                                  <TableRow>
+                                    <TableCell className="font-medium"></TableCell>
+                                    <TableCell>Bonds +1</TableCell>
+                                    <TableCell>
+                                      {studentData["Bonds +1"]}
+                                    </TableCell>
+                                    <TableCell className="text-right"></TableCell>
+                                  </TableRow>
+                                  <TableRow>
+                                    <TableCell className="font-medium">
+                                      Year +2
+                                    </TableCell>
+                                    <TableCell></TableCell>
+                                    <TableCell></TableCell>
+                                    <TableCell className="text-right">
+                                      {(
+                                        studentData["Stocks +2"] +
+                                        studentData["Bonds +2"]
+                                      ).toFixed(2) || "N/A"}
+                                    </TableCell>
+                                  </TableRow>
+                                  <TableRow>
+                                    <TableCell className="font-medium"></TableCell>
+                                    <TableCell>Stocks +2</TableCell>
+                                    <TableCell>
+                                      {studentData["Stocks +2"]}
+                                    </TableCell>
+                                    <TableCell className="text-right"></TableCell>
+                                  </TableRow>
+                                  <TableRow>
+                                    <TableCell className="font-medium"></TableCell>
+                                    <TableCell>Bonds +2</TableCell>
+                                    <TableCell>
+                                      {studentData["Bonds +2"]}
+                                    </TableCell>
+                                    <TableCell className="text-right"></TableCell>
+                                  </TableRow>
+                                  <TableRow>
+                                    <TableCell className="font-medium">
+                                      Year +3
+                                    </TableCell>
+                                    <TableCell></TableCell>
+                                    <TableCell></TableCell>
+                                    <TableCell className="text-right">
+                                      {(
+                                        studentData["Stocks +3"] +
+                                        studentData["Bonds +3"]
+                                      ).toFixed(2) || "N/A"}
+                                    </TableCell>
+                                  </TableRow>
+                                  <TableRow>
+                                    <TableCell className="font-medium"></TableCell>
+                                    <TableCell>Stocks +3</TableCell>
+                                    <TableCell>
+                                      {studentData["Stocks +3"]}
+                                    </TableCell>
+                                    <TableCell className="text-right"></TableCell>
+                                  </TableRow>
+                                  <TableRow>
+                                    <TableCell className="font-medium"></TableCell>
+                                    <TableCell>Bonds +3</TableCell>
+                                    <TableCell>
+                                      {studentData["Bonds +3"]}
+                                    </TableCell>
+                                    <TableCell className="text-right"></TableCell>
+                                  </TableRow>
+                                  <TableRow>
+                                    <TableCell className="font-bold">
+                                      -Liabilities
+                                    </TableCell>
+                                    <TableCell></TableCell>
+                                    <TableCell></TableCell>
+                                    <TableCell className="text-right">
+                                      {studentData["Loans"]}
+                                    </TableCell>
+                                  </TableRow>
+                                  <TableRow>
+                                    <TableCell className="font-bold"></TableCell>
+                                    <TableCell>Loans payable</TableCell>
+                                    <TableCell>
+                                      {studentData["Loans"]}
+                                    </TableCell>
+                                    <TableCell className="text-right"></TableCell>
+                                  </TableRow>
+                                  <TableRow>
+                                    <TableCell className="font-bold">
+                                      Net worth
+                                    </TableCell>
+                                    <TableCell></TableCell>
+                                    <TableCell></TableCell>
+                                    <TableCell className="text-right">
+                                      {studentData["Net Worth"]}
+                                    </TableCell>
+                                  </TableRow>
                                 </TableBody>
                               </Table>
                             </TabsContent>
                             <TabsContent value="incometax">
                               <Table>
                                 <TableCaption>
-                                  Student's income/tax statement
+                                  Your income/tax statment.
                                 </TableCaption>
                                 <TableHeader>
                                   <TableRow>
@@ -403,8 +538,219 @@ const AdminStudentView = () => {
                                       {studentData["Wage Income"]}
                                     </TableCell>
                                   </TableRow>
-                                  {/* Additional table rows same as original - removed for brevity */}
-                                  {/* Insert the remaining income/tax statement table rows here */}
+                                  <TableRow>
+                                    <TableCell className="font-medium">
+                                      +/- Capital Gain/Loss on Current Stocks{" "}
+                                    </TableCell>
+                                    <TableCell className="text-right">
+                                      {
+                                        studentData[
+                                          "Capital Gain/Loss on Current Stocks"
+                                        ]
+                                      }
+                                    </TableCell>
+                                  </TableRow>
+                                  <TableRow>
+                                    <TableCell className="font-medium">
+                                      +/- Capital Gain/Loss on SMG{" "}
+                                    </TableCell>
+                                    <TableCell className="text-right">
+                                      {" "}
+                                      {studentData["Capital Gain/Loss in SMG"]}
+                                    </TableCell>
+                                  </TableRow>
+                                  <TableRow>
+                                    <TableCell className="font-medium">
+                                      + Interest Income on Current Bonds
+                                    </TableCell>
+                                    <TableCell className="text-right">
+                                      {
+                                        studentData[
+                                          "Interest Earned on Current Bonds"
+                                        ]
+                                      }
+                                    </TableCell>
+                                  </TableRow>
+                                  <TableRow>
+                                    <TableCell className="font-medium">
+                                      + Withdrawals from Tax Deferred Accounts
+                                    </TableCell>
+                                    <TableCell className="text-right">
+                                      {
+                                        studentData[
+                                          "Withdrawals from Tax Deferred Accounts"
+                                        ]
+                                      }
+                                    </TableCell>
+                                  </TableRow>
+                                  <TableRow>
+                                    <TableCell className="font-medium">
+                                      - Deposits to Tax Deferred Accounts
+                                    </TableCell>
+                                    <TableCell className="text-right">
+                                      {
+                                        studentData[
+                                          "Deposits to Tax Deferred Accounts"
+                                        ]
+                                      }
+                                    </TableCell>
+                                  </TableRow>
+                                  <TableRow>
+                                    <TableCell className="font-bold">
+                                      Taxable Income
+                                    </TableCell>
+                                    <TableCell className="text-right">
+                                      {studentData["Taxable Income"]}
+                                    </TableCell>
+                                  </TableRow>
+                                  <TableRow>
+                                    <TableCell className="font-medium">
+                                      - Tax
+                                    </TableCell>
+                                    <TableCell className="text-right">
+                                      {studentData["Taxes"]}
+                                    </TableCell>
+                                  </TableRow>
+                                  <TableRow>
+                                    <TableCell className="font-bold">
+                                      Net Income
+                                    </TableCell>
+                                    <TableCell className="text-right">
+                                      {studentData["Net Income"]}
+                                    </TableCell>
+                                  </TableRow>
+                                  <TableRow>
+                                    <TableCell className="font-bold"></TableCell>
+                                    <TableCell className="text-right"></TableCell>
+                                  </TableRow>
+                                  <TableRow>
+                                    <TableCell className="font-bold"></TableCell>
+                                    <TableCell className="text-right"></TableCell>
+                                  </TableRow>
+                                  <TableRow>
+                                    <TableCell className="font-bold">
+                                      Beginning Cash Balance
+                                    </TableCell>
+                                    <TableCell className="text-right">
+                                      {studentData["Beginning cash"]}
+                                    </TableCell>
+                                  </TableRow>
+                                  <TableRow>
+                                    <TableCell className="font-medium">
+                                      + Wage Income
+                                    </TableCell>
+                                    <TableCell className="text-right">
+                                      {studentData["Wage Income"]}
+                                    </TableCell>
+                                  </TableRow>
+                                  <TableRow>
+                                    <TableCell className="font-medium">
+                                      +/- Capital Gain/Loss in SMG
+                                    </TableCell>
+                                    <TableCell className="text-right">
+                                      {studentData["Capital Gain/Loss in SMG"]}
+                                    </TableCell>
+                                  </TableRow>
+                                  <TableRow>
+                                    <TableCell className="font-medium">
+                                      + Grants Received
+                                    </TableCell>
+                                    <TableCell className="text-right">
+                                      {" "}
+                                      {studentData["Grants Received"]}
+                                    </TableCell>
+                                  </TableRow>
+                                  <TableRow>
+                                    <TableCell className="font-medium">
+                                      + Loans Received
+                                    </TableCell>
+                                    <TableCell className="text-right">
+                                      {" "}
+                                      {studentData["Loans"]}
+                                    </TableCell>
+                                  </TableRow>
+                                  <TableRow>
+                                    <TableCell className="font-medium">
+                                      + Total Stock Sales
+                                    </TableCell>
+                                    <TableCell className="text-right">
+                                      {" "}
+                                      {studentData["Total Stock Sales"]}
+                                    </TableCell>
+                                  </TableRow>
+                                  <TableRow>
+                                    <TableCell className="font-medium">
+                                      + Total Bond Sales
+                                    </TableCell>
+                                    <TableCell className="text-right">
+                                      {" "}
+                                      {studentData["Total Bond Sales"]}
+                                    </TableCell>
+                                  </TableRow>
+                                  <TableRow>
+                                    <TableCell className="font-medium">
+                                      - Taxes
+                                    </TableCell>
+                                    <TableCell className="text-right">
+                                      {studentData["Taxes"]}
+                                    </TableCell>
+                                  </TableRow>
+                                  <TableRow>
+                                    <TableCell className="font-medium">
+                                      - Loan Payments
+                                    </TableCell>
+                                    <TableCell className="text-right">
+                                      {studentData["Loan Payments"]}
+                                    </TableCell>
+                                  </TableRow>
+                                  <TableRow>
+                                    <TableCell className="font-medium">
+                                      - Spending
+                                    </TableCell>
+                                    <TableCell className="text-right">
+                                      {studentData["Spending"]}
+                                    </TableCell>
+                                  </TableRow>
+                                  <TableRow>
+                                    <TableCell className="font-medium">
+                                      - Fees and Penalties
+                                    </TableCell>
+                                    <TableCell className="text-right">
+                                      {studentData["Fees and Penalties"]}
+                                    </TableCell>
+                                  </TableRow>
+                                  <TableRow>
+                                    <TableCell className="font-medium">
+                                      - Total Stock Purchases
+                                    </TableCell>
+                                    <TableCell className="text-right">
+                                      {studentData["Total Stock Purchases"]}
+                                    </TableCell>
+                                  </TableRow>
+                                  <TableRow>
+                                    <TableCell className="font-medium">
+                                      - Total Bond Purchases
+                                    </TableCell>
+                                    <TableCell className="text-right">
+                                      {studentData["Total Bond Purchases"]}
+                                    </TableCell>
+                                  </TableRow>
+                                  <TableRow>
+                                    <TableCell className="font-medium">
+                                      - SMG
+                                    </TableCell>
+                                    <TableCell className="text-right">
+                                      {studentData["SMG"]}
+                                    </TableCell>
+                                  </TableRow>
+                                  <TableRow>
+                                    <TableCell className="font-bold">
+                                      Ending Cash
+                                    </TableCell>
+                                    <TableCell className="text-right">
+                                      {studentData["Cash"]}
+                                    </TableCell>
+                                  </TableRow>
                                 </TableBody>
                               </Table>
                             </TabsContent>
