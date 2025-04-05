@@ -143,6 +143,8 @@ const Home: React.FC = () => {
       if (data && data.length > 0) {
         let userData = null;
         data.forEach((u) => {
+          console.log(u);
+          console.log(user);
           if (u.Email && user.user?.email) {
             if (u.Email.toLowerCase() === user.user?.email.toLowerCase()) {
               userData = u;
@@ -645,13 +647,19 @@ const Home: React.FC = () => {
                               <TableCell className="font-medium">
                                 + Total Stock Sales
                               </TableCell>
-                              <TableCell className="text-right">??</TableCell>
+                              <TableCell className="text-right">
+                                {" "}
+                                {curUser["Total Stock Sales"]}
+                              </TableCell>
                             </TableRow>
                             <TableRow>
                               <TableCell className="font-medium">
                                 + Total Bond Sales
                               </TableCell>
-                              <TableCell className="text-right">??</TableCell>
+                              <TableCell className="text-right">
+                                {" "}
+                                {curUser["Total Bond Sales"]}
+                              </TableCell>
                             </TableRow>
                             <TableRow>
                               <TableCell className="font-medium">
