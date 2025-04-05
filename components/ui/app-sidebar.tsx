@@ -23,11 +23,6 @@ const items = [
     url: "/admin/meeting",
     icon: Inbox,
   },
-  {
-    title: "Notifications",
-    url: "/admin/notifications",
-    icon: Bell,
-  },
 ];
 
 export function AppSidebar() {
