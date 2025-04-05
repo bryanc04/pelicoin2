@@ -1,4 +1,12 @@
-import { Calendar, Home, Inbox, Search, Settings, Bell } from "lucide-react";
+import {
+  Calendar,
+  Home,
+  Inbox,
+  Search,
+  Settings,
+  Bell,
+  Eye,
+} from "lucide-react";
 
 import {
   Sidebar,
@@ -22,6 +30,11 @@ const items = [
     title: "Meetings",
     url: "/admin/meeting",
     icon: Inbox,
+  },
+  {
+    title: "View Student Page",
+    url: "/admin/studentview",
+    icon: Eye,
   },
 ];
 

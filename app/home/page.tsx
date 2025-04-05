@@ -407,7 +407,7 @@ const Home: React.FC = () => {
                             <TableRow>
                               <TableCell className="font-medium"></TableCell>
                               <TableCell>SMG</TableCell>
-                              <TableCell>??</TableCell>
+                              <TableCell>{curUser["SMG"]}</TableCell>
                               <TableCell className="text-right"></TableCell>
                             </TableRow>
                             <TableRow>
@@ -488,12 +488,14 @@ const Home: React.FC = () => {
                               </TableCell>
                               <TableCell></TableCell>
                               <TableCell></TableCell>
-                              <TableCell className="text-right">??</TableCell>
+                              <TableCell className="text-right">
+                                {curUser["Loans"]}
+                              </TableCell>
                             </TableRow>
                             <TableRow>
                               <TableCell className="font-bold"></TableCell>
                               <TableCell>Loans payable</TableCell>
-                              <TableCell>??</TableCell>
+                              <TableCell>{curUser["Loans"]}</TableCell>
                               <TableCell className="text-right"></TableCell>
                             </TableRow>
                             <TableRow>

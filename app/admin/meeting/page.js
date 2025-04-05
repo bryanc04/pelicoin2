@@ -2,7 +2,7 @@
 
 import React from "react";
 import { format } from "date-fns";
-import { Calendar as CalendarIcon, Clock, Trash2 } from "lucide-react";
+import { Calendar as CalendarIcon, Clock, Trash2, Loader2 } from "lucide-react";
 import supabase from "../../supabaseClient";
 import { useRef, useEffect, useState } from "react";
 import { Button } from "@/components/ui/button";
@@ -28,15 +28,17 @@ import { useToast } from "@/hooks/use-toast";
 import { SidebarProvider, SidebarTrigger } from "@/components/ui/sidebar";
 import { AppSidebar } from "@/components/ui/app-sidebar";
 import emailjs from "@emailjs/browser";
+
 export default function UpcomingMeetings() {
   const [data, setData] = React.useState([]);
+  const [loading, setLoading] = React.useState(true);
   const [newEventName, setNewEventName] = React.useState("");
   const [newEventDate, setNewEventDate] = React.useState();
   const [newEventTime, setNewEventTime] = React.useState("");
 
   const { toast } = useToast();
   useEffect(() => emailjs.init("D6aKMxno3vr0IgN3e"), []);
-  // Add these
+
   const handleSubmit = async (e) => {
     const serviceId = "service_51uk45n";
     const templateId = "template_z6zefyv";
@@ -48,11 +50,10 @@ export default function UpcomingMeetings() {
       toast("Email sent to bryan_chung@loomis.org");
     } catch (error) {
       console.log(error);
-    } finally {
     }
   };
 
-  // Generate time options for every 30 minutes
+  // Generate time options for every. 30 minutes
   const timeOptions = React.useMemo(() => {
     const times = [];
     for (let hour = 0; hour < 24; hour++) {
@@ -76,20 +77,32 @@ export default function UpcomingMeetings() {
   };
 
   const fetchData = async () => {
-    const { data: fetchedData, error } = await supabase
-      .from("Meetings")
-      .select()
-      .order("Date", { ascending: true });
+    setLoading(true);
+    try {
+      const { data: fetchedData, error } = await supabase
+        .from("Meetings")
+        .select()
+        .order("Date", { ascending: true });
 
-    if (error) {
-      console.error("Error fetching data:", error);
+      if (error) {
+        console.error("Error fetching data:", error);
+        toast({
+          title: "Error",
+          description: "Failed to fetch data",
+          variant: "destructive",
+        });
+      } else {
+        setData(fetchedData || []);
+      }
+    } catch (error) {
+      console.error("Unexpected error:", error);
       toast({
         title: "Error",
-        description: "Failed to fetch data",
+        description: "An unexpected error occurred",
         variant: "destructive",
       });
-    } else {
-      setData(fetchedData || []);
+    } finally {
+      setLoading(false);
     }
   };
 
@@ -191,8 +204,15 @@ export default function UpcomingMeetings() {
         >
           <CardContent>
             <h1 className="text-xl font-bold mb-4">Upcoming Meetings</h1>
-            <ScrollArea className="h-64">
-              {data.length > 0 ? (
+            <ScrollArea>
+              {loading ? (
+                <div className="flex justify-center items-center py-8">
+                  <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
+                  <span className="ml-2 text-muted-foreground">
+                    Loading meetings...
+                  </span>
+                </div>
+              ) : data.length > 0 ? (
                 <Table>
                   <TableHeader>
                     <TableRow>
@@ -204,7 +224,7 @@ export default function UpcomingMeetings() {
                   </TableHeader>
                   <TableBody>
                     {data.map((row) => (
-                      <TableRow key={Math.random() * 10}>
+                      <TableRow key={row.id || Math.random() * 10}>
                         <TableCell>{row.Topic}</TableCell>
                         <TableCell>{formatDate(row.Date)}</TableCell>
                         <TableCell>
@@ -227,7 +247,9 @@ export default function UpcomingMeetings() {
                   </TableBody>
                 </Table>
               ) : (
-                <p className="text-muted-foreground">No meetings found.</p>
+                <p className="text-muted-foreground text-center py-8">
+                  No meetings found.
+                </p>
               )}
             </ScrollArea>
             <div className="grid grid-cols-3 gap-4 mt-4">
@@ -284,7 +306,7 @@ export default function UpcomingMeetings() {
                     <div className="grid grid-cols-1 gap-1 p-2">
                       {timeOptions.map((time) => (
                         <Button
-                          key={Math.random() * 10}
+                          key={time}
                           variant={newEventTime === time ? "default" : "ghost"}
                           className="justify-start text-left"
                           onClick={() => setNewEventTime(time)}

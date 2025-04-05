@@ -67,6 +67,7 @@ const columnHeaders = [
 
 export default function Home() {
   const [dataArray, setDataArray] = useState([]);
+  const [loading, setLoading] = useState(true);
   const [visibleColumns, setVisibleColumns] = useState([
     "Student",
     "Grad Year",
@@ -79,12 +80,26 @@ export default function Home() {
   useEffect(() => {
     // Fetch initial data from Supabase
     const fetchData = async () => {
-      const { data, error } = await supabase.from("Pelicoin balances").select();
-      if (error) {
-        console.error("Error fetching data:", error);
-        toast.error("Failed to fetch data");
-      } else {
-        setDataArray(data);
+      setLoading(true);
+      try {
+        const { data, error } = await supabase
+          .from("Pelicoin balances")
+          .select();
+        if (error) {
+          console.error("Error fetching data:", error);
+          toast.error("Failed to fetch data");
+        } else {
+          setDataArray(
+            data.sort((a, b) =>
+              a.Student.toLowerCase().localeCompare(b.Student.toLowerCase())
+            )
+          );
+        }
+      } catch (error) {
+        console.error("Unexpected error:", error);
+        toast.error("An error occurred while fetching data");
+      } finally {
+        setLoading(false);
       }
     };
     fetchData();
@@ -205,28 +220,68 @@ export default function Home() {
             </div>
           </div>
 
-          <div className="border rounded-md">
-            <div className="overflow-x-auto max-h-[80vh]">
+          <div className="rounded-md">
+            {/* Use grid for layout to maintain header position */}
+            <div
+              className="overflow-x-auto max-h-[80vh]"
+              style={{
+                display: "block",
+                position: "relative",
+              }}
+            >
+              {/* Apply sticky styles directly to the table */}
               <Table>
-                <TableHeader className="sticky top-0 bg-background">
+                {/* Make the TableHeader sticky */}
+                <TableHeader className="sticky top-0 bg-white z-10 ">
                   <TableRow>
                     {visibleColumns.map((column) => (
-                      <TableHead key={column} className="whitespace-nowrap">
+                      <TableHead key={column} className="whitespace-nowrap  ">
                         {column}
                       </TableHead>
                     ))}
                   </TableRow>
                 </TableHeader>
                 <TableBody>
-                  {filteredData.length > 0 ? (
+                  {loading ? (
+                    <TableRow>
+                      <TableCell
+                        colSpan={visibleColumns.length}
+                        className="h-24 text-center"
+                      >
+                        <div className="flex justify-center items-center">
+                          <svg
+                            className="animate-spin -ml-1 mr-3 h-5 w-5 text-primary"
+                            xmlns="http://www.w3.org/2000/svg"
+                            fill="none"
+                            viewBox="0 0 24 24"
+                          >
+                            <circle
+                              className="opacity-25"
+                              cx="12"
+                              cy="12"
+                              r="10"
+                              stroke="currentColor"
+                              strokeWidth="4"
+                            ></circle>
+                            <path
+                              className="opacity-75"
+                              fill="currentColor"
+                              d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
+                            ></path>
+                          </svg>
+                          Loading data...
+                        </div>
+                      </TableCell>
+                    </TableRow>
+                  ) : filteredData.length > 0 ? (
                     filteredData.map((row, rowIndex) => (
-                      <TableRow key={rowIndex}>
+                      <TableRow key={rowIndex} className="hover:bg-muted/50">
                         {visibleColumns.map((column) => (
                           <TableCell
                             key={`${rowIndex}-${column}`}
-                            className="whitespace-nowrap"
+                            className="whitespace-nowrap "
                           >
-                            {row[column] || ""}
+                            {row[column]}
                           </TableCell>
                         ))}
                       </TableRow>
@@ -237,9 +292,7 @@ export default function Home() {
                         colSpan={visibleColumns.length}
                         className="h-24 text-center"
                       >
-                        {dataArray.length === 0
-                          ? "Loading data..."
-                          : "No matching records found"}
+                        No matching records found
                       </TableCell>
                     </TableRow>
                   )}
