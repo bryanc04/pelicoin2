@@ -125,6 +125,14 @@ export default function Home() {
           .filter((obj) => obj.Student && obj.Student.toLowerCase() !== "total")
           .sort((a, b) =>
             a.Student.toLowerCase().localeCompare(b.Student.toLowerCase())
+          )
+          .map((obj) =>
+            Object.fromEntries(
+              Object.entries(obj).map(([key, value]) => [
+                key,
+                value === "" ? "0" : value,
+              ])
+            )
           );
 
         console.log(data);
