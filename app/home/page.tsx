@@ -130,11 +130,14 @@ const Home: React.FC = () => {
     try {
       const { data: user } = await supabase.auth.getUser();
 
+      console.log(user);
+
       if (!user?.user?.email) {
         return;
       }
 
       const { data, error } = await supabase.from("Pelicoin balances").select();
+      console.log(data);
 
       if (error) {
         throw error;
