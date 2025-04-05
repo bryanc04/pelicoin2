@@ -130,8 +130,17 @@ export default function Home() {
             Object.fromEntries(
               Object.entries(obj).map(([key, value]) => [
                 key,
-                value === "" ? "0" : value,
+                value === "" ? 0 : value,
               ])
+            )
+          )
+          .map((obj) =>
+            Object.fromEntries(
+              Object.entries(obj).map(([key, value]) => {
+                if (value === "") return [key, 0]; // replace with numeric 0
+                if (!isNaN(value)) return [key, parseFloat(value)]; // cast to number if possible
+                return [key, value]; // leave strings as-is
+              })
             )
           );
 
