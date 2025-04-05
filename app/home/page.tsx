@@ -156,6 +156,8 @@ const Home: React.FC = () => {
               u["SIS Login ID"].toLowerCase() ===
               user.user["user_metadata"]["preferred_username"].toLowerCase()
             ) {
+              u["First Name"] = u["Student"].split(",")[1].trim();
+              u["Last Name"] = u["Student"].split(",")[0].trim();
               userData = u;
             }
           }
