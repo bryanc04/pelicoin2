@@ -142,7 +142,7 @@ export default function Home() {
 
         if (error) {
           console.error("Error updating Supabase:", error);
-          toast.error("Failed to update data in Supabase");
+          toast.error(error);
         } else {
           toast.success("Data successfully uploaded");
           setDataArray(data);
