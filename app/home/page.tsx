@@ -44,7 +44,13 @@ const Home: React.FC = () => {
       { key: "Cash", label: "Cash" },
       { key: "Current Bonds", label: "Current Bonds" },
       { key: "Current Stocks", label: "Current Stocks" },
-      // Add more fields as needed
+      { key: "SMG", label: "SMG" },
+      { key: "Bonds +1", label: "+1 Bonds" },
+      { key: "Stocks +1", label: "+1 Stocks" },
+      { key: "Bonds +2", label: "+2 Bonds" },
+      { key: "Stocks +2", label: "+2 Stocks" },
+      { key: "Bonds +3", label: "+3 Bonds" },
+      { key: "Stocks +3", label: "+3 Stocks" },
     ];
 
     const labels: string[] = [];
@@ -180,6 +186,40 @@ const Home: React.FC = () => {
     } else {
       alert("Failed to sign up.");
     }
+    setLoading(false);
+  };
+
+  // New function to handle unregistering from meetings
+  const handleUnregister = async (
+    meetingTopic: string,
+    attendees: string[]
+  ) => {
+    setLoading(true);
+
+    const currentUserName = `${curUser["First Name"]} ${curUser["Last Name"]}`;
+
+    if (!attendees.includes(currentUserName)) {
+      alert("You are not registered for this meeting!");
+      setLoading(false);
+      return;
+    }
+
+    // Filter out the current user from the attendees list
+    const updatedAttendees = attendees.filter(
+      (name) => name !== currentUserName
+    );
+
+    const { error } = await supabase
+      .from("Meetings")
+      .update({ Attendees: updatedAttendees })
+      .eq("Topic", meetingTopic);
+
+    if (!error) {
+      fetchMeetings();
+    } else {
+      alert("Failed to unregister from meeting.");
+    }
+
     setLoading(false);
   };
 
@@ -487,14 +527,17 @@ const Home: React.FC = () => {
                                 +/- Capital Gain/Loss on Current Stocks{" "}
                               </TableCell>
                               <TableCell className="text-right">
-                                {curUser["Capital Gains on Current Stocks"]}
+                                {curUser["Capital Gain/Loss on Current Stocks"]}
                               </TableCell>
                             </TableRow>
                             <TableRow>
                               <TableCell className="font-medium">
                                 +/- Capital Gain/Loss on SMG{" "}
                               </TableCell>
-                              <TableCell className="text-right">??</TableCell>
+                              <TableCell className="text-right">
+                                {" "}
+                                {curUser["Capital Gain/Loss in SMG"]}
+                              </TableCell>
                             </TableRow>
                             <TableRow>
                               <TableCell className="font-medium">
@@ -576,7 +619,9 @@ const Home: React.FC = () => {
                               <TableCell className="font-medium">
                                 +/- Capital Gain/Loss in SMG
                               </TableCell>
-                              <TableCell className="text-right">??</TableCell>
+                              <TableCell className="text-right">
+                                {curUser["Capital Gain/Loss in SMG"]}
+                              </TableCell>
                             </TableRow>
                             <TableRow>
                               <TableCell className="font-medium">
@@ -644,19 +689,25 @@ const Home: React.FC = () => {
                               <TableCell className="font-medium">
                                 - Total Stock Purchases
                               </TableCell>
-                              <TableCell className="text-right">??</TableCell>
+                              <TableCell className="text-right">
+                                {curUser["Total Stock Purchases"]}
+                              </TableCell>
                             </TableRow>
                             <TableRow>
                               <TableCell className="font-medium">
                                 - Total Bond Purchases
                               </TableCell>
-                              <TableCell className="text-right">??</TableCell>
+                              <TableCell className="text-right">
+                                {curUser["Total Bond Purchases"]}
+                              </TableCell>
                             </TableRow>
                             <TableRow>
                               <TableCell className="font-medium">
                                 - SMG
                               </TableCell>
-                              <TableCell className="text-right">??</TableCell>
+                              <TableCell className="text-right">
+                                {curUser["SMG"]}
+                              </TableCell>
                             </TableRow>
                             <TableRow>
                               <TableCell className="font-bold">
@@ -681,36 +732,50 @@ const Home: React.FC = () => {
             <h2 className="text-xl font-semibold mb-4">Upcoming Meetings</h2>
             {meetings.length > 0 ? (
               <ul className="space-y-4">
-                {meetings.map((meeting) => (
-                  <li
-                    key={meeting.Topic}
-                    className="flex justify-between items-center"
-                  >
-                    <div>
-                      <h3 className="font-bold">{meeting.Topic}</h3>
-                      <p className="text-sm text-gray-500">
-                        {new Date(meeting.Date).toLocaleString()}
-                      </p>
-                    </div>
-                    <Button
-                      className="ml-4"
-                      disabled={
-                        meeting.Attendees?.includes(
-                          curUser["First Name"] + " " + curUser["Last Name"]
-                        ) || loading
-                      }
-                      onClick={() =>
-                        handleSignUp(meeting.Topic, meeting.Attendees || [])
-                      }
+                {meetings.map((meeting) => {
+                  const isRegistered = meeting.Attendees?.includes(
+                    curUser["First Name"] + " " + curUser["Last Name"]
+                  );
+
+                  return (
+                    <li
+                      key={meeting.Topic}
+                      className="flex justify-between items-center"
                     >
-                      {meeting.Attendees?.includes(
-                        curUser["First Name"] + " " + curUser["Last Name"]
-                      )
-                        ? "Signed Up"
-                        : "Sign Up"}
-                    </Button>
-                  </li>
-                ))}
+                      <div>
+                        <h3 className="font-bold">{meeting.Topic}</h3>
+                        <p className="text-sm text-gray-500">
+                          {new Date(meeting.Date).toLocaleString()}
+                        </p>
+                      </div>
+                      {isRegistered ? (
+                        <Button
+                          variant="outline"
+                          className="ml-4 bg-red-50 hover:bg-red-100 text-red-600 border-red-300"
+                          disabled={loading}
+                          onClick={() =>
+                            handleUnregister(
+                              meeting.Topic,
+                              meeting.Attendees || []
+                            )
+                          }
+                        >
+                          Unregister
+                        </Button>
+                      ) : (
+                        <Button
+                          className="ml-4"
+                          disabled={loading}
+                          onClick={() =>
+                            handleSignUp(meeting.Topic, meeting.Attendees || [])
+                          }
+                        >
+                          Sign Up
+                        </Button>
+                      )}
+                    </li>
+                  );
+                })}
               </ul>
             ) : (
               <p>No upcoming meetings</p>

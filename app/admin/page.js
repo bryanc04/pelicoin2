@@ -1,24 +1,34 @@
 "use client";
 
 import React, { useState, useEffect } from "react";
-import "ka-table/style.css";
-import { DataType, Table, useTable } from "ka-table";
-import { EditingMode, SortingMode } from "ka-table/enums";
-import { kaPropsUtils } from "ka-table/utils";
-import { openAllEditors } from "ka-table/actionCreators";
 import Papa from "papaparse";
-import { Button, Upload, message } from "antd";
-import supabase from "../supabaseClient.js"; // Import your Supabase client setup
+import supabase from "../supabaseClient.js";
 import { SidebarProvider, SidebarTrigger } from "@/components/ui/sidebar";
 import { AppSidebar } from "@/components/ui/app-sidebar";
-import toast, { Toaster } from "react-hot-toast";
+import { Button } from "@/components/ui/button";
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from "@/components/ui/table";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
+import { ChevronDown } from "lucide-react";
+import { Input } from "@/components/ui/input";
+import { toast, Toaster } from "react-hot-toast";
 
 const columnHeaders = [
   "Student",
   "Grad Year",
   "Cash",
   "SMG",
-
   "Current Bonds",
   "Current Stocks",
   "Bonds +1",
@@ -57,13 +67,14 @@ const columnHeaders = [
 
 export default function Home() {
   const [dataArray, setDataArray] = useState([]);
-  const [columns, setColumns] = useState([]);
-  const table = useTable({
-    data: dataArray,
-    onDispatch: (action, tableProps) => {
-      setDataArray(tableProps.data); // Update dataArray when changes are made
-    },
-  });
+  const [visibleColumns, setVisibleColumns] = useState([
+    "Student",
+    "Grad Year",
+    "Cash",
+    "SMG",
+    "Net Worth",
+  ]);
+  const [searchTerm, setSearchTerm] = useState("");
 
   useEffect(() => {
     // Fetch initial data from Supabase
@@ -73,134 +84,167 @@ export default function Home() {
         console.error("Error fetching data:", error);
         toast.error("Failed to fetch data");
       } else {
-        setDataArray(data.map((row, index) => ({ ...row, id: index + 1 })));
+        setDataArray(data);
       }
     };
     fetchData();
   }, []);
 
-  useEffect(() => {
-    // Set up table columns
-    const tmpColumns = columnHeaders.map((header) => ({
-      key: header,
-      title: header,
-      width: 120,
-      dataType: DataType.String,
-    }));
-    setColumns(tmpColumns);
-  }, []);
+  const handleFileUpload = (event) => {
+    const file = event.target.files[0];
+    if (!file) return;
 
-  const handleFileUpload = (file) => {
     Papa.parse(file, {
       header: true,
       complete: async (result) => {
-        const { data, errors } = result;
+        let { data, errors } = result;
 
         if (errors.length > 0) {
           toast.error("Error parsing CSV file");
-          toast.error(errors);
+          console.error(errors);
           return;
         }
 
+        // Filter out rows with "total" in Student field and sort by Student name
+        data = data
+          .filter((obj) => obj.Student && obj.Student.toLowerCase() !== "total")
+          .sort((a, b) =>
+            a.Student.toLowerCase().localeCompare(b.Student.toLowerCase())
+          );
+
         console.log(data);
 
-        const { error } = await supabase
-          .from("Pelicoin balances")
-          .upsert(data.filter((obj) => obj.Student.toLowerCase() !== "total"))
-          .select();
+        // Update Supabase with the new data
+        const { error } = await supabase.from("Pelicoin balances").upsert(data);
 
         if (error) {
           console.error("Error updating Supabase:", error);
-          toast.error(error);
-          // toast.error("Failed to update data in Supabase");
+          toast.error("Failed to update data in Supabase");
         } else {
           toast.success("Data successfully uploaded");
-          setDataArray(data.map((row, index) => ({ ...row, id: index + 1 })));
+          setDataArray(data);
         }
       },
     });
   };
 
-  const updateCells = async () => {
-    if (kaPropsUtils.isValid(table.props)) {
-      table.saveAllEditors();
-      toast.success("Data saved locally");
-
-      // Save updated data back to Supabase
-      const { error } = await supabase
-        .from("your-table-name")
-        .upsert(dataArray);
-
-      if (error) {
-        console.error("Error saving data to Supabase:", error);
-        toast.error("Failed to save data to Supabase");
-      } else {
-        toast.success("Data saved to Supabase");
-      }
-    } else {
-      table.validate(); // Validate the table if not valid
-    }
-  };
+  // Filter data based on search term
+  const filteredData = dataArray.filter(
+    (row) =>
+      row.Student &&
+      row.Student.toLowerCase().includes(searchTerm.toLowerCase())
+  );
 
   return (
     <>
-      {" "}
       <Toaster />
       <SidebarProvider>
         <AppSidebar />
         <SidebarTrigger />
-        <div>
-          <div className="all">
-            <div className="row g-0">
-              <div
-                className="home_column"
-                style={{
-                  width: "84.5%",
-                }}
-              >
-                <div
-                  style={{ height: "90vh", width: "80vw", overflow: "scroll" }}
-                >
-                  {columns.length > 0 && (
-                    <Table
-                      table={table}
-                      columns={columns}
-                      data={dataArray}
-                      editingMode={EditingMode.Cell}
-                      rowKeyField={"id"}
-                      sortingMode={SortingMode.Single}
-                      singleAction={openAllEditors()}
-                    />
-                  )}
-                </div>
-                <div
-                  style={{
-                    width: "100%",
-                    height: "10vh",
-                    justifyContent: "center",
-                    alignItems: "center",
-                    display: "flex",
-                  }}
-                >
-                  <Upload
-                    accept=".csv"
-                    showUploadList={false}
-                    beforeUpload={(file) => {
-                      handleFileUpload(file);
-                      return false;
-                    }}
-                  >
-                    <Button size="lg">Upload CSV</Button>
-                  </Upload>
-                  <Button
-                    onClick={updateCells}
-                    style={{ marginLeft: "10px" }}
-                    size="lg"
-                  >
-                    Update
+        <div
+          className="container mx-auto py-4 px-2"
+          style={{ position: "relative", top: "5vh", height: "fit-content" }}
+        >
+          <div className="flex justify-between items-center mb-4">
+            <h1 className="text-2xl font-bold">Pelicoin Balances</h1>
+
+            <div className="flex gap-4 items-center">
+              <Input
+                placeholder="Search by student name..."
+                value={searchTerm}
+                onChange={(e) => setSearchTerm(e.target.value)}
+                className="w-64"
+              />
+
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                  <Button variant="outline">
+                    Columns <ChevronDown className="ml-2 h-4 w-4" />
                   </Button>
-                </div>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent className="w-64 max-h-96 overflow-y-auto">
+                  {columnHeaders.map((column) => (
+                    <DropdownMenuItem
+                      key={column}
+                      className="flex items-center gap-2"
+                      onSelect={(e) => {
+                        e.preventDefault();
+                        setVisibleColumns((prev) =>
+                          prev.includes(column)
+                            ? prev.filter((col) => col !== column)
+                            : [...prev, column]
+                        );
+                      }}
+                    >
+                      <input
+                        type="checkbox"
+                        checked={visibleColumns.includes(column)}
+                        onChange={() => {}}
+                        className="mr-2"
+                      />
+                      {column}
+                    </DropdownMenuItem>
+                  ))}
+                </DropdownMenuContent>
+              </DropdownMenu>
+
+              <div>
+                <Input
+                  type="file"
+                  accept=".csv"
+                  id="csv-upload"
+                  className="hidden"
+                  onChange={handleFileUpload}
+                />
+                <label htmlFor="csv-upload">
+                  <Button variant="default" asChild>
+                    <span>Upload CSV</span>
+                  </Button>
+                </label>
               </div>
+            </div>
+          </div>
+
+          <div className="border rounded-md">
+            <div className="overflow-x-auto max-h-[80vh]">
+              <Table>
+                <TableHeader className="sticky top-0 bg-background">
+                  <TableRow>
+                    {visibleColumns.map((column) => (
+                      <TableHead key={column} className="whitespace-nowrap">
+                        {column}
+                      </TableHead>
+                    ))}
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {filteredData.length > 0 ? (
+                    filteredData.map((row, rowIndex) => (
+                      <TableRow key={rowIndex}>
+                        {visibleColumns.map((column) => (
+                          <TableCell
+                            key={`${rowIndex}-${column}`}
+                            className="whitespace-nowrap"
+                          >
+                            {row[column] || ""}
+                          </TableCell>
+                        ))}
+                      </TableRow>
+                    ))
+                  ) : (
+                    <TableRow>
+                      <TableCell
+                        colSpan={visibleColumns.length}
+                        className="h-24 text-center"
+                      >
+                        {dataArray.length === 0
+                          ? "Loading data..."
+                          : "No matching records found"}
+                      </TableCell>
+                    </TableRow>
+                  )}
+                </TableBody>
+              </Table>
             </div>
           </div>
         </div>

@@ -185,6 +185,8 @@ export default function UpcomingMeetings() {
             height: "90vh",
             padding: "30px",
             marginTop: "30px",
+            border: "none",
+            boxShadow: "none",
           }}
         >
           <CardContent>
