@@ -24,10 +24,10 @@ import {
   PopoverTrigger,
 } from "@/components/ui/popover";
 import { cn } from "@/lib/utils";
-import { useToast } from "@/hooks/use-toast";
 import { SidebarProvider, SidebarTrigger } from "@/components/ui/sidebar";
 import { AppSidebar } from "@/components/ui/app-sidebar";
 import emailjs from "@emailjs/browser";
+import { toast, Toaster } from "react-hot-toast";
 
 export default function UpcomingMeetings() {
   const [data, setData] = React.useState([]);
@@ -36,7 +36,6 @@ export default function UpcomingMeetings() {
   const [newEventDate, setNewEventDate] = React.useState();
   const [newEventTime, setNewEventTime] = React.useState("");
 
-  const { toast } = useToast();
   useEffect(() => emailjs.init("D6aKMxno3vr0IgN3e"), []);
 
   const handleSubmit = async (e) => {
@@ -47,7 +46,7 @@ export default function UpcomingMeetings() {
         name: "Bryan Chung",
         recipient: "bryan_chung@loomis.org",
       });
-      toast("Email sent to bryan_chung@loomis.org");
+      toast.success("Email sent to bryan_chung@loomis.org");
     } catch (error) {
       console.log(error);
     }
@@ -86,21 +85,13 @@ export default function UpcomingMeetings() {
 
       if (error) {
         console.error("Error fetching data:", error);
-        toast({
-          title: "Error",
-          description: "Failed to fetch data",
-          variant: "destructive",
-        });
+        toast.error("Failed to fetch data");
       } else {
         setData(fetchedData || []);
       }
     } catch (error) {
       console.error("Unexpected error:", error);
-      toast({
-        title: "Error",
-        description: "An unexpected error occurred",
-        variant: "destructive",
-      });
+      toast.error(error);
     } finally {
       setLoading(false);
     }
@@ -112,16 +103,15 @@ export default function UpcomingMeetings() {
 
   const handleAddMeeting = async () => {
     if (!newEventName || !newEventDate || !newEventTime) {
-      toast({
-        title: "Error",
-        description: "Please fill in the topic, date, and time",
-        variant: "destructive",
-      });
+      toast.error("Please fill in the values");
       return;
     }
 
     // Combine date and time
-    const combinedDateTime = new Date(newEventDate);
+    const combinedDateTime = new Date(newEventDate).toLocaleTimeString(
+      "en-US",
+      { timeZone: "America/New_York" }
+    );
     const [hours, minutes] = newEventTime.split(":");
     combinedDateTime.setHours(parseInt(hours), parseInt(minutes), 0, 0);
 
@@ -137,16 +127,9 @@ export default function UpcomingMeetings() {
 
     if (error) {
       console.error("Error adding meeting:", error);
-      toast({
-        title: "Error",
-        description: "Failed to add meeting",
-        variant: "destructive",
-      });
+      toast.error("Failed to add meeting");
     } else {
-      toast({
-        title: "Success",
-        description: "Meeting added successfully",
-      });
+      toast.success("Meeting added succesfully");
       handleSubmit();
       setNewEventName("");
       setNewEventDate(undefined);
@@ -163,16 +146,9 @@ export default function UpcomingMeetings() {
 
     if (error) {
       console.error("Error deleting meeting:", error);
-      toast({
-        title: "Error",
-        description: "Failed to delete meeting",
-        variant: "destructive",
-      });
+      toast.error("Failed to delete meeting");
     } else {
-      toast({
-        title: "Success",
-        description: "Meeting deleted successfully",
-      });
+      toast.success("Meeting deleted succesfully");
       fetchData();
     }
   };
@@ -184,12 +160,14 @@ export default function UpcomingMeetings() {
       hour: "numeric",
       minute: "numeric",
       hour12: true,
+      timeZone: "America/New_York",
     });
   };
 
   return (
     <div className="">
       <SidebarProvider>
+        <Toaster />
         <AppSidebar />
         <SidebarTrigger />
         <Card

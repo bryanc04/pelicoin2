@@ -6,6 +6,7 @@ import {
   Settings,
   Bell,
   Eye,
+  Store,
 } from "lucide-react";
 
 import {
@@ -27,6 +28,11 @@ const items = [
     icon: Home,
   },
   {
+    title: "Notifications",
+    url: "/admin/notifications",
+    icon: Bell,
+  },
+  {
     title: "Meetings",
     url: "/admin/meeting",
     icon: Inbox,
@@ -35,6 +41,11 @@ const items = [
     title: "View Student Page",
     url: "/admin/studentview",
     icon: Eye,
+  },
+  {
+    title: "Manage Shop",
+    url: "/admin/manageshop",
+    icon: Store,
   },
 ];
 

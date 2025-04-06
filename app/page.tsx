@@ -33,7 +33,7 @@ export default function Home() {
           console.log(user);
           if (user) {
             // Show toast notification for successful sign-in
-            toast("Sign in successful");
+            toast.success("Sign in successful");
 
             // If the user is an admin (change this to your admin email)
             if (user.email === "linda_fisher@loomis.org") {

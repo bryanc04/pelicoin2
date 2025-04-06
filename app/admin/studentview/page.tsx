@@ -55,8 +55,13 @@ const AdminStudentView = () => {
   const [searchTerm, setSearchTerm] = useState("");
   const [filteredStudents, setFilteredStudents] = useState<any[]>([]);
   const [isPopoverOpen, setIsPopoverOpen] = useState(false);
+  const [shop, setShop] = useState<any[]>([]);
+  const fetchShop = async () => {
+    const { data, error } = await supabase.from("Shop").select();
+    if (!error) setShop(data || []);
+  };
   const router = useRouter();
-
+  const [curUser, setCurUser] = useState<any>({});
   // Fetch all students and meetings on component mount
   useEffect(() => {
     const checkAuth = async () => {
@@ -67,6 +72,7 @@ const AdminStudentView = () => {
 
         await fetchStudents();
         await fetchMeetings();
+        await fetchShop();
       } catch (error) {
         console.error("Error:", error);
         toast.error("An error occurred");
@@ -77,7 +83,16 @@ const AdminStudentView = () => {
 
     checkAuth();
   }, [router]);
-
+  const formatDate = (dateStr: any) => {
+    return new Date(dateStr).toLocaleString("en-US", {
+      month: "long",
+      day: "numeric",
+      hour: "numeric",
+      minute: "numeric",
+      hour12: true,
+      timeZone: "America/New_York",
+    });
+  };
   // Filter students when search term changes
   useEffect(() => {
     if (searchTerm) {
@@ -132,6 +147,7 @@ const AdminStudentView = () => {
       userData["Last Name"] = userData["Student"].split(",")[0]?.trim() || "";
 
       setStudentData(userData);
+      setCurUser(userData);
       setSelectedStudent(studentName);
       buildPieChartData(userData);
       setIsPopoverOpen(false);
@@ -141,9 +157,9 @@ const AdminStudentView = () => {
   const buildPieChartData = (userData: any) => {
     const fields = [
       { key: "Cash", label: "Cash" },
+      { key: "SMG", label: "SMG" },
       { key: "Current Bonds", label: "Current Bonds" },
       { key: "Current Stocks", label: "Current Stocks" },
-      { key: "SMG", label: "SMG" },
       { key: "Bonds +1", label: "+1 Bonds" },
       { key: "Stocks +1", label: "+1 Stocks" },
       { key: "Bonds +2", label: "+2 Bonds" },
@@ -155,18 +171,21 @@ const AdminStudentView = () => {
     const labels: string[] = [];
     const data: number[] = [];
     const colors: string[] = [
-      "#BEADFA",
-      "#D0BFFF",
-      "#DFCCFB",
-      "#E8D8FF",
-      "#F1E3FF",
+      "#fff570",
+      "#57d964",
+      "#8cdb94",
+      "#c6f5cb",
+      "#59b4ff",
+      "#badaf5",
+      "#dd75ff",
+      "#e6b2f7",
+      "#808080",
+      "#c9c9c9",
     ];
 
     fields.forEach(({ key, label }, index) => {
-      if (userData[key] > 0) {
-        labels.push(label);
-        data.push(userData[key]);
-      }
+      labels.push(label);
+      data.push(userData[key]);
     });
 
     setPiechartData({
@@ -270,7 +289,7 @@ const AdminStudentView = () => {
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                   {/* Pie Chart */}
                   <div className="p-4 bg-white shadow rounded-lg">
-                    <h2 className="text-lg font-semibold mb-4">
+                    <h2 className="text-xl font-semibold mb-4">
                       Portfolio Breakdown
                     </h2>
                     {piechartData ? (
@@ -293,552 +312,647 @@ const AdminStudentView = () => {
                     ) : (
                       <p>No data available</p>
                     )}
-                    <p className="text-center mt-4 font-medium">
-                      Net Worth: {studentData["Net Worth"] || 0} Pelicoin
+                    <p className="text-center mt-4 font-medium mt-[-30px]">
+                      Net Worth: {curUser["Net Worth"] || 0} Pelicoin
                     </p>
                     <div className="flex justify-center">
-                      <Dialog>
-                        <DialogTrigger asChild>
-                          <Button variant="link" className="text-blue-600">
-                            View statements
-                          </Button>
-                        </DialogTrigger>
-                        <DialogContent className="sm:max-w-[425px] overflow-y-scroll max-h-screen">
-                          <DialogHeader>
-                            <DialogTitle>Statements</DialogTitle>
-                          </DialogHeader>
-                          <Tabs defaultValue="financial" className="w-full">
-                            <TabsList className="w-full">
-                              <TabsTrigger
-                                value="financial"
-                                className="w-full font-bold"
-                              >
-                                Financial Statement
-                              </TabsTrigger>
-                              <TabsTrigger
-                                value="incometax"
-                                className="w-full font-bold"
-                              >
-                                Income/Tax Statement
-                              </TabsTrigger>
-                            </TabsList>
-                            <TabsContent value="financial">
-                              <Table>
-                                <TableCaption>
-                                  Your financial statment.
-                                </TableCaption>
-                                <TableHeader>
-                                  <TableRow>
-                                    <TableHead className="w-[100px]">
-                                      Overall
-                                    </TableHead>
-                                    <TableHead>Specifics</TableHead>
-                                    <TableHead>Value</TableHead>
-                                    <TableHead className="text-right">
-                                      Total
-                                    </TableHead>
-                                  </TableRow>
-                                </TableHeader>
-                                <TableBody>
-                                  <TableRow>
-                                    <TableCell className="font-bold">
-                                      Assets
-                                    </TableCell>
-                                    <TableCell></TableCell>
-                                    <TableCell></TableCell>
-                                    <TableCell className="text-right"></TableCell>
-                                  </TableRow>
-                                  <TableRow>
-                                    <TableCell className="font-medium">
-                                      Current
-                                    </TableCell>
-                                    <TableCell></TableCell>
-                                    <TableCell></TableCell>
-                                    <TableCell className="text-right">
-                                      {(
-                                        studentData["Cash"] +
-                                        studentData["Current Stocks"] +
-                                        studentData["Current Bonds"]
-                                      ).toFixed(2) || "N/A"}
-                                    </TableCell>
-                                  </TableRow>
-                                  <TableRow>
-                                    <TableCell className="font-medium"></TableCell>
-                                    <TableCell>Cash</TableCell>
-                                    <TableCell>{studentData["Cash"]}</TableCell>
-                                    <TableCell className="text-right"></TableCell>
-                                  </TableRow>
-                                  <TableRow>
-                                    <TableCell className="font-medium"></TableCell>
-                                    <TableCell>Current Stocks</TableCell>
-                                    <TableCell>
-                                      {studentData["Current Stocks"]}
-                                    </TableCell>
-                                    <TableCell className="text-right"></TableCell>
-                                  </TableRow>
-                                  <TableRow>
-                                    <TableCell className="font-medium"></TableCell>
-                                    <TableCell>Current Bonds</TableCell>
-                                    <TableCell>
-                                      {studentData["Current Bonds"]}
-                                    </TableCell>
-                                    <TableCell className="text-right"></TableCell>
-                                  </TableRow>
-                                  <TableRow>
-                                    <TableCell className="font-medium"></TableCell>
-                                    <TableCell>SMG</TableCell>
-                                    <TableCell>{studentData["SMG"]}</TableCell>
-                                    <TableCell className="text-right"></TableCell>
-                                  </TableRow>
-                                  <TableRow>
-                                    <TableCell className="font-medium">
-                                      Year +1
-                                    </TableCell>
-                                    <TableCell></TableCell>
-                                    <TableCell></TableCell>
-                                    <TableCell className="text-right">
-                                      {(
-                                        studentData["Stocks +1"] +
-                                        studentData["Bonds +1"]
-                                      ).toFixed(2) || "N/A"}
-                                    </TableCell>
-                                  </TableRow>
-                                  <TableRow>
-                                    <TableCell className="font-medium"></TableCell>
-                                    <TableCell>Stocks +1</TableCell>
-                                    <TableCell>
-                                      {studentData["Stocks +1"]}
-                                    </TableCell>
-                                    <TableCell className="text-right"></TableCell>
-                                  </TableRow>
-                                  <TableRow>
-                                    <TableCell className="font-medium"></TableCell>
-                                    <TableCell>Bonds +1</TableCell>
-                                    <TableCell>
-                                      {studentData["Bonds +1"]}
-                                    </TableCell>
-                                    <TableCell className="text-right"></TableCell>
-                                  </TableRow>
-                                  <TableRow>
-                                    <TableCell className="font-medium">
-                                      Year +2
-                                    </TableCell>
-                                    <TableCell></TableCell>
-                                    <TableCell></TableCell>
-                                    <TableCell className="text-right">
-                                      {(
-                                        studentData["Stocks +2"] +
-                                        studentData["Bonds +2"]
-                                      ).toFixed(2) || "N/A"}
-                                    </TableCell>
-                                  </TableRow>
-                                  <TableRow>
-                                    <TableCell className="font-medium"></TableCell>
-                                    <TableCell>Stocks +2</TableCell>
-                                    <TableCell>
-                                      {studentData["Stocks +2"]}
-                                    </TableCell>
-                                    <TableCell className="text-right"></TableCell>
-                                  </TableRow>
-                                  <TableRow>
-                                    <TableCell className="font-medium"></TableCell>
-                                    <TableCell>Bonds +2</TableCell>
-                                    <TableCell>
-                                      {studentData["Bonds +2"]}
-                                    </TableCell>
-                                    <TableCell className="text-right"></TableCell>
-                                  </TableRow>
-                                  <TableRow>
-                                    <TableCell className="font-medium">
-                                      Year +3
-                                    </TableCell>
-                                    <TableCell></TableCell>
-                                    <TableCell></TableCell>
-                                    <TableCell className="text-right">
-                                      {(
-                                        studentData["Stocks +3"] +
-                                        studentData["Bonds +3"]
-                                      ).toFixed(2) || "N/A"}
-                                    </TableCell>
-                                  </TableRow>
-                                  <TableRow>
-                                    <TableCell className="font-medium"></TableCell>
-                                    <TableCell>Stocks +3</TableCell>
-                                    <TableCell>
-                                      {studentData["Stocks +3"]}
-                                    </TableCell>
-                                    <TableCell className="text-right"></TableCell>
-                                  </TableRow>
-                                  <TableRow>
-                                    <TableCell className="font-medium"></TableCell>
-                                    <TableCell>Bonds +3</TableCell>
-                                    <TableCell>
-                                      {studentData["Bonds +3"]}
-                                    </TableCell>
-                                    <TableCell className="text-right"></TableCell>
-                                  </TableRow>
-                                  <TableRow>
-                                    <TableCell className="font-bold">
-                                      -Liabilities
-                                    </TableCell>
-                                    <TableCell></TableCell>
-                                    <TableCell></TableCell>
-                                    <TableCell className="text-right">
-                                      {studentData["Loans"]}
-                                    </TableCell>
-                                  </TableRow>
-                                  <TableRow>
-                                    <TableCell className="font-bold"></TableCell>
-                                    <TableCell>Loans payable</TableCell>
-                                    <TableCell>
-                                      {studentData["Loans"]}
-                                    </TableCell>
-                                    <TableCell className="text-right"></TableCell>
-                                  </TableRow>
-                                  <TableRow>
-                                    <TableCell className="font-bold">
-                                      Net worth
-                                    </TableCell>
-                                    <TableCell></TableCell>
-                                    <TableCell></TableCell>
-                                    <TableCell className="text-right">
-                                      {studentData["Net Worth"]}
-                                    </TableCell>
-                                  </TableRow>
-                                </TableBody>
-                              </Table>
-                            </TabsContent>
-                            <TabsContent value="incometax">
-                              <Table>
-                                <TableCaption>
-                                  Your income/tax statment.
-                                </TableCaption>
-                                <TableHeader>
-                                  <TableRow>
-                                    <TableHead className="w-[200px]">
-                                      Name
-                                    </TableHead>
-                                    <TableHead className="text-right">
-                                      Value
-                                    </TableHead>
-                                  </TableRow>
-                                </TableHeader>
-                                <TableBody>
-                                  <TableRow>
-                                    <TableCell className="font-bold">
-                                      Earnings
-                                    </TableCell>
-                                    <TableCell></TableCell>
-                                  </TableRow>
-                                  <TableRow>
-                                    <TableCell className="font-medium">
-                                      Wage Income
-                                    </TableCell>
-                                    <TableCell className="text-right">
-                                      {studentData["Wage Income"]}
-                                    </TableCell>
-                                  </TableRow>
-                                  <TableRow>
-                                    <TableCell className="font-medium">
-                                      +/- Capital Gain/Loss on Current Stocks{" "}
-                                    </TableCell>
-                                    <TableCell className="text-right">
-                                      {
-                                        studentData[
-                                          "Capital Gain/Loss on Current Stocks"
-                                        ]
-                                      }
-                                    </TableCell>
-                                  </TableRow>
-                                  <TableRow>
-                                    <TableCell className="font-medium">
-                                      +/- Capital Gain/Loss on SMG{" "}
-                                    </TableCell>
-                                    <TableCell className="text-right">
-                                      {" "}
-                                      {studentData["Capital Gain/Loss in SMG"]}
-                                    </TableCell>
-                                  </TableRow>
-                                  <TableRow>
-                                    <TableCell className="font-medium">
-                                      + Interest Income on Current Bonds
-                                    </TableCell>
-                                    <TableCell className="text-right">
-                                      {
-                                        studentData[
-                                          "Interest Earned on Current Bonds"
-                                        ]
-                                      }
-                                    </TableCell>
-                                  </TableRow>
-                                  <TableRow>
-                                    <TableCell className="font-medium">
-                                      + Withdrawals from Tax Deferred Accounts
-                                    </TableCell>
-                                    <TableCell className="text-right">
-                                      {
-                                        studentData[
-                                          "Withdrawals from Tax Deferred Accounts"
-                                        ]
-                                      }
-                                    </TableCell>
-                                  </TableRow>
-                                  <TableRow>
-                                    <TableCell className="font-medium">
-                                      - Deposits to Tax Deferred Accounts
-                                    </TableCell>
-                                    <TableCell className="text-right">
-                                      {
-                                        studentData[
-                                          "Deposits to Tax Deferred Accounts"
-                                        ]
-                                      }
-                                    </TableCell>
-                                  </TableRow>
-                                  <TableRow>
-                                    <TableCell className="font-bold">
-                                      Taxable Income
-                                    </TableCell>
-                                    <TableCell className="text-right">
-                                      {studentData["Taxable Income"]}
-                                    </TableCell>
-                                  </TableRow>
-                                  <TableRow>
-                                    <TableCell className="font-medium">
-                                      - Tax
-                                    </TableCell>
-                                    <TableCell className="text-right">
-                                      {studentData["Taxes"]}
-                                    </TableCell>
-                                  </TableRow>
-                                  <TableRow>
-                                    <TableCell className="font-bold">
-                                      Net Income
-                                    </TableCell>
-                                    <TableCell className="text-right">
-                                      {studentData["Net Income"]}
-                                    </TableCell>
-                                  </TableRow>
-                                  <TableRow>
-                                    <TableCell className="font-bold"></TableCell>
-                                    <TableCell className="text-right"></TableCell>
-                                  </TableRow>
-                                  <TableRow>
-                                    <TableCell className="font-bold"></TableCell>
-                                    <TableCell className="text-right"></TableCell>
-                                  </TableRow>
-                                  <TableRow>
-                                    <TableCell className="font-bold">
-                                      Beginning Cash Balance
-                                    </TableCell>
-                                    <TableCell className="text-right">
-                                      {studentData["Beginning cash"]}
-                                    </TableCell>
-                                  </TableRow>
-                                  <TableRow>
-                                    <TableCell className="font-medium">
-                                      + Wage Income
-                                    </TableCell>
-                                    <TableCell className="text-right">
-                                      {studentData["Wage Income"]}
-                                    </TableCell>
-                                  </TableRow>
-                                  <TableRow>
-                                    <TableCell className="font-medium">
-                                      +/- Capital Gain/Loss in SMG
-                                    </TableCell>
-                                    <TableCell className="text-right">
-                                      {studentData["Capital Gain/Loss in SMG"]}
-                                    </TableCell>
-                                  </TableRow>
-                                  <TableRow>
-                                    <TableCell className="font-medium">
-                                      + Grants Received
-                                    </TableCell>
-                                    <TableCell className="text-right">
-                                      {" "}
-                                      {studentData["Grants Received"]}
-                                    </TableCell>
-                                  </TableRow>
-                                  <TableRow>
-                                    <TableCell className="font-medium">
-                                      + Loans Received
-                                    </TableCell>
-                                    <TableCell className="text-right">
-                                      {" "}
-                                      {studentData["Loans"]}
-                                    </TableCell>
-                                  </TableRow>
-                                  <TableRow>
-                                    <TableCell className="font-medium">
-                                      + Total Stock Sales
-                                    </TableCell>
-                                    <TableCell className="text-right">
-                                      {" "}
-                                      {studentData["Total Stock Sales"]}
-                                    </TableCell>
-                                  </TableRow>
-                                  <TableRow>
-                                    <TableCell className="font-medium">
-                                      + Total Bond Sales
-                                    </TableCell>
-                                    <TableCell className="text-right">
-                                      {" "}
-                                      {studentData["Total Bond Sales"]}
-                                    </TableCell>
-                                  </TableRow>
-                                  <TableRow>
-                                    <TableCell className="font-medium">
-                                      - Taxes
-                                    </TableCell>
-                                    <TableCell className="text-right">
-                                      {studentData["Taxes"]}
-                                    </TableCell>
-                                  </TableRow>
-                                  <TableRow>
-                                    <TableCell className="font-medium">
-                                      - Loan Payments
-                                    </TableCell>
-                                    <TableCell className="text-right">
-                                      {studentData["Loan Payments"]}
-                                    </TableCell>
-                                  </TableRow>
-                                  <TableRow>
-                                    <TableCell className="font-medium">
-                                      - Spending
-                                    </TableCell>
-                                    <TableCell className="text-right">
-                                      {studentData["Spending"]}
-                                    </TableCell>
-                                  </TableRow>
-                                  <TableRow>
-                                    <TableCell className="font-medium">
-                                      - Fees and Penalties
-                                    </TableCell>
-                                    <TableCell className="text-right">
-                                      {studentData["Fees and Penalties"]}
-                                    </TableCell>
-                                  </TableRow>
-                                  <TableRow>
-                                    <TableCell className="font-medium">
-                                      - Total Stock Purchases
-                                    </TableCell>
-                                    <TableCell className="text-right">
-                                      {studentData["Total Stock Purchases"]}
-                                    </TableCell>
-                                  </TableRow>
-                                  <TableRow>
-                                    <TableCell className="font-medium">
-                                      - Total Bond Purchases
-                                    </TableCell>
-                                    <TableCell className="text-right">
-                                      {studentData["Total Bond Purchases"]}
-                                    </TableCell>
-                                  </TableRow>
-                                  <TableRow>
-                                    <TableCell className="font-medium">
-                                      - SMG
-                                    </TableCell>
-                                    <TableCell className="text-right">
-                                      {studentData["SMG"]}
-                                    </TableCell>
-                                  </TableRow>
-                                  <TableRow>
-                                    <TableCell className="font-bold">
-                                      Ending Cash
-                                    </TableCell>
-                                    <TableCell className="text-right">
-                                      {studentData["Cash"]}
-                                    </TableCell>
-                                  </TableRow>
-                                </TableBody>
-                              </Table>
-                            </TabsContent>
-                          </Tabs>
-                        </DialogContent>
-                      </Dialog>
+                      <div>
+                        <Dialog>
+                          <DialogTrigger asChild>
+                            <Button
+                              variant="link"
+                              className="mr-[auto] ml-[auto] text-blue-600"
+                            >
+                              View statements
+                            </Button>
+                          </DialogTrigger>
+                          <DialogContent className="sm:max-w-[425px] overflow-y-scroll max-h-screen">
+                            <DialogHeader>
+                              <DialogTitle>Statements</DialogTitle>
+                            </DialogHeader>
+                            <Tabs defaultValue="financial" className="w-[100%]">
+                              <TabsList className="w-[100%]">
+                                <TabsTrigger
+                                  value="financial"
+                                  className="w-[100%] font-bold"
+                                >
+                                  Financial Statement
+                                </TabsTrigger>
+                                <TabsTrigger
+                                  value="incometax"
+                                  className="w-[100%] font-bold"
+                                >
+                                  Income/Tax Statement
+                                </TabsTrigger>
+                              </TabsList>
+                              <TabsContent value="financial">
+                                <Table>
+                                  <TableCaption>
+                                    Your financial statment.
+                                  </TableCaption>
+                                  <TableHeader>
+                                    <TableRow>
+                                      <TableHead className="w-[100px]">
+                                        Overall
+                                      </TableHead>
+                                      <TableHead>Specifics</TableHead>
+                                      <TableHead>Value</TableHead>
+                                      <TableHead className="text-right">
+                                        Total
+                                      </TableHead>
+                                    </TableRow>
+                                  </TableHeader>
+                                  <TableBody>
+                                    <TableRow>
+                                      <TableCell className="font-bold">
+                                        Assets
+                                      </TableCell>
+                                      <TableCell></TableCell>
+                                      <TableCell></TableCell>
+                                      <TableCell className="text-right"></TableCell>
+                                    </TableRow>
+                                    <TableRow>
+                                      <TableCell className="font-medium">
+                                        Current
+                                      </TableCell>
+                                      <TableCell></TableCell>
+                                      <TableCell></TableCell>
+                                      <TableCell className="text-right">
+                                        {(
+                                          curUser["Cash"] +
+                                          curUser["Current Stocks"] +
+                                          curUser["Current Bonds"]
+                                        ).toFixed(2) || "N/A"}
+                                      </TableCell>
+                                    </TableRow>
+                                    <TableRow>
+                                      <TableCell className="font-medium"></TableCell>
+                                      <TableCell>Cash</TableCell>
+                                      <TableCell>{curUser["Cash"]}</TableCell>
+                                      <TableCell className="text-right"></TableCell>
+                                    </TableRow>
+                                    <TableRow>
+                                      <TableCell className="font-medium"></TableCell>
+                                      <TableCell>Current Stocks</TableCell>
+                                      <TableCell>
+                                        {curUser["Current Stocks"]}
+                                      </TableCell>
+                                      <TableCell className="text-right"></TableCell>
+                                    </TableRow>
+                                    <TableRow>
+                                      <TableCell className="font-medium"></TableCell>
+                                      <TableCell>Current Bonds</TableCell>
+                                      <TableCell>
+                                        {curUser["Current Bonds"]}
+                                      </TableCell>
+                                      <TableCell className="text-right"></TableCell>
+                                    </TableRow>
+                                    <TableRow>
+                                      <TableCell className="font-medium"></TableCell>
+                                      <TableCell>SMG</TableCell>
+                                      <TableCell>{curUser["SMG"]}</TableCell>
+                                      <TableCell className="text-right"></TableCell>
+                                    </TableRow>
+                                    <TableRow>
+                                      <TableCell className="font-medium">
+                                        Year +1
+                                      </TableCell>
+                                      <TableCell></TableCell>
+                                      <TableCell></TableCell>
+                                      <TableCell className="text-right">
+                                        {(
+                                          curUser["Stocks +1"] +
+                                          curUser["Bonds +1"]
+                                        ).toFixed(2) || "N/A"}
+                                      </TableCell>
+                                    </TableRow>
+                                    <TableRow>
+                                      <TableCell className="font-medium"></TableCell>
+                                      <TableCell>Stocks +1</TableCell>
+                                      <TableCell>
+                                        {curUser["Stocks +1"]}
+                                      </TableCell>
+                                      <TableCell className="text-right"></TableCell>
+                                    </TableRow>
+                                    <TableRow>
+                                      <TableCell className="font-medium"></TableCell>
+                                      <TableCell>Bonds +1</TableCell>
+                                      <TableCell>
+                                        {curUser["Bonds +1"]}
+                                      </TableCell>
+                                      <TableCell className="text-right"></TableCell>
+                                    </TableRow>
+                                    <TableRow>
+                                      <TableCell className="font-medium">
+                                        Year +2
+                                      </TableCell>
+                                      <TableCell></TableCell>
+                                      <TableCell></TableCell>
+                                      <TableCell className="text-right">
+                                        {(
+                                          curUser["Stocks +2"] +
+                                          curUser["Bonds +2"]
+                                        ).toFixed(2) || "N/A"}
+                                      </TableCell>
+                                    </TableRow>
+                                    <TableRow>
+                                      <TableCell className="font-medium"></TableCell>
+                                      <TableCell>Stocks +2</TableCell>
+                                      <TableCell>
+                                        {curUser["Stocks +2"]}
+                                      </TableCell>
+                                      <TableCell className="text-right"></TableCell>
+                                    </TableRow>
+                                    <TableRow>
+                                      <TableCell className="font-medium"></TableCell>
+                                      <TableCell>Bonds +2</TableCell>
+                                      <TableCell>
+                                        {curUser["Bonds +2"]}
+                                      </TableCell>
+                                      <TableCell className="text-right"></TableCell>
+                                    </TableRow>
+                                    <TableRow>
+                                      <TableCell className="font-medium">
+                                        Year +3
+                                      </TableCell>
+                                      <TableCell></TableCell>
+                                      <TableCell></TableCell>
+                                      <TableCell className="text-right">
+                                        {(
+                                          curUser["Stocks +3"] +
+                                          curUser["Bonds +3"]
+                                        ).toFixed(2) || "N/A"}
+                                      </TableCell>
+                                    </TableRow>
+                                    <TableRow>
+                                      <TableCell className="font-medium"></TableCell>
+                                      <TableCell>Stocks +3</TableCell>
+                                      <TableCell>
+                                        {curUser["Stocks +3"]}
+                                      </TableCell>
+                                      <TableCell className="text-right"></TableCell>
+                                    </TableRow>
+                                    <TableRow>
+                                      <TableCell className="font-medium"></TableCell>
+                                      <TableCell>Bonds +3</TableCell>
+                                      <TableCell>
+                                        {curUser["Bonds +3"]}
+                                      </TableCell>
+                                      <TableCell className="text-right"></TableCell>
+                                    </TableRow>
+                                    <TableRow>
+                                      <TableCell className="font-bold">
+                                        -Liabilities
+                                      </TableCell>
+                                      <TableCell></TableCell>
+                                      <TableCell></TableCell>
+                                      <TableCell className="text-right">
+                                        {curUser["Loans"]}
+                                      </TableCell>
+                                    </TableRow>
+                                    <TableRow>
+                                      <TableCell className="font-bold"></TableCell>
+                                      <TableCell>Loans payable</TableCell>
+                                      <TableCell>{curUser["Loans"]}</TableCell>
+                                      <TableCell className="text-right"></TableCell>
+                                    </TableRow>
+                                    <TableRow>
+                                      <TableCell className="font-bold">
+                                        Net worth
+                                      </TableCell>
+                                      <TableCell></TableCell>
+                                      <TableCell></TableCell>
+                                      <TableCell className="text-right">
+                                        {curUser["Net Worth"]}
+                                      </TableCell>
+                                    </TableRow>
+                                  </TableBody>
+                                </Table>
+                              </TabsContent>
+                              <TabsContent value="incometax">
+                                <Table>
+                                  <TableCaption>
+                                    Your income/tax statment.
+                                  </TableCaption>
+                                  <TableHeader>
+                                    <TableRow>
+                                      <TableHead className="w-[200px]">
+                                        Name
+                                      </TableHead>
+                                      <TableHead className="text-right">
+                                        Value
+                                      </TableHead>
+                                    </TableRow>
+                                  </TableHeader>
+                                  <TableBody>
+                                    <TableRow>
+                                      <TableCell className="font-bold">
+                                        Earnings
+                                      </TableCell>
+                                      <TableCell></TableCell>
+                                    </TableRow>
+                                    <TableRow>
+                                      <TableCell className="font-medium">
+                                        Wage Income
+                                      </TableCell>
+                                      <TableCell className="text-right">
+                                        {curUser["Wage Income"]}
+                                      </TableCell>
+                                    </TableRow>
+                                    <TableRow>
+                                      <TableCell className="font-medium">
+                                        +/- Capital Gain/Loss on Current Stocks{" "}
+                                      </TableCell>
+                                      <TableCell className="text-right">
+                                        {
+                                          curUser[
+                                            "Capital Gain/Loss on Current Stocks"
+                                          ]
+                                        }
+                                      </TableCell>
+                                    </TableRow>
+                                    <TableRow>
+                                      <TableCell className="font-medium">
+                                        +/- Capital Gain/Loss on SMG{" "}
+                                      </TableCell>
+                                      <TableCell className="text-right">
+                                        {" "}
+                                        {curUser["Capital Gain/Loss in SMG"]}
+                                      </TableCell>
+                                    </TableRow>
+                                    <TableRow>
+                                      <TableCell className="font-medium">
+                                        + Interest Income on Current Bonds
+                                      </TableCell>
+                                      <TableCell className="text-right">
+                                        {
+                                          curUser[
+                                            "Interest Earned on Current Bonds"
+                                          ]
+                                        }
+                                      </TableCell>
+                                    </TableRow>
+                                    <TableRow>
+                                      <TableCell className="font-medium">
+                                        + Withdrawals from Tax Deferred Accounts
+                                      </TableCell>
+                                      <TableCell className="text-right">
+                                        {
+                                          curUser[
+                                            "Withdrawals from Tax Deferred Accounts"
+                                          ]
+                                        }
+                                      </TableCell>
+                                    </TableRow>
+                                    <TableRow>
+                                      <TableCell className="font-medium">
+                                        - Deposits to Tax Deferred Accounts
+                                      </TableCell>
+                                      <TableCell className="text-right">
+                                        {
+                                          curUser[
+                                            "Deposits to Tax Deferred Accounts"
+                                          ]
+                                        }
+                                      </TableCell>
+                                    </TableRow>
+                                    <TableRow>
+                                      <TableCell className="font-bold">
+                                        Taxable Income
+                                      </TableCell>
+                                      <TableCell className="text-right">
+                                        {curUser["Taxable Income"]}
+                                      </TableCell>
+                                    </TableRow>
+                                    <TableRow>
+                                      <TableCell className="font-medium">
+                                        - Tax
+                                      </TableCell>
+                                      <TableCell className="text-right">
+                                        {curUser["Taxes"]}
+                                      </TableCell>
+                                    </TableRow>
+                                    <TableRow>
+                                      <TableCell className="font-bold">
+                                        Net Income
+                                      </TableCell>
+                                      <TableCell className="text-right">
+                                        {curUser["Net Income"]}
+                                      </TableCell>
+                                    </TableRow>
+                                    <TableRow>
+                                      <TableCell className="font-bold"></TableCell>
+                                      <TableCell className="text-right"></TableCell>
+                                    </TableRow>
+                                    <TableRow>
+                                      <TableCell className="font-bold"></TableCell>
+                                      <TableCell className="text-right"></TableCell>
+                                    </TableRow>
+                                    <TableRow>
+                                      <TableCell className="font-bold">
+                                        Beginning Cash Balance
+                                      </TableCell>
+                                      <TableCell className="text-right">
+                                        {curUser["Beginning cash"]}
+                                      </TableCell>
+                                    </TableRow>
+                                    <TableRow>
+                                      <TableCell className="font-medium">
+                                        + Wage Income
+                                      </TableCell>
+                                      <TableCell className="text-right">
+                                        {curUser["Wage Income"]}
+                                      </TableCell>
+                                    </TableRow>
+                                    <TableRow>
+                                      <TableCell className="font-medium">
+                                        +/- Capital Gain/Loss in SMG
+                                      </TableCell>
+                                      <TableCell className="text-right">
+                                        {curUser["Capital Gain/Loss in SMG"]}
+                                      </TableCell>
+                                    </TableRow>
+                                    <TableRow>
+                                      <TableCell className="font-medium">
+                                        + Grants Received
+                                      </TableCell>
+                                      <TableCell className="text-right">
+                                        {" "}
+                                        {curUser["Grants Received"]}
+                                      </TableCell>
+                                    </TableRow>
+                                    <TableRow>
+                                      <TableCell className="font-medium">
+                                        + Loans Received
+                                      </TableCell>
+                                      <TableCell className="text-right">
+                                        {" "}
+                                        {curUser["Loans"]}
+                                      </TableCell>
+                                    </TableRow>
+                                    <TableRow>
+                                      <TableCell className="font-medium">
+                                        + Total Stock Sales
+                                      </TableCell>
+                                      <TableCell className="text-right">
+                                        {" "}
+                                        {curUser["Total Stock Sales"]}
+                                      </TableCell>
+                                    </TableRow>
+                                    <TableRow>
+                                      <TableCell className="font-medium">
+                                        + Total Bond Sales
+                                      </TableCell>
+                                      <TableCell className="text-right">
+                                        {" "}
+                                        {curUser["Total Bond Sales"]}
+                                      </TableCell>
+                                    </TableRow>
+                                    <TableRow>
+                                      <TableCell className="font-medium">
+                                        - Taxes
+                                      </TableCell>
+                                      <TableCell className="text-right">
+                                        {curUser["Taxes"]}
+                                      </TableCell>
+                                    </TableRow>
+                                    <TableRow>
+                                      <TableCell className="font-medium">
+                                        - Loan Payments
+                                      </TableCell>
+                                      <TableCell className="text-right">
+                                        {curUser["Loan Payments"]}
+                                      </TableCell>
+                                    </TableRow>
+                                    <TableRow>
+                                      <TableCell className="font-medium">
+                                        - Spending
+                                      </TableCell>
+                                      <TableCell className="text-right">
+                                        {curUser["Spending"]}
+                                      </TableCell>
+                                    </TableRow>
+                                    <TableRow>
+                                      <TableCell className="font-medium">
+                                        - Fees and Penalties
+                                      </TableCell>
+                                      <TableCell className="text-right">
+                                        {curUser["Fees and Penalties"]}
+                                      </TableCell>
+                                    </TableRow>
+                                    <TableRow>
+                                      <TableCell className="font-medium">
+                                        - Total Stock Purchases
+                                      </TableCell>
+                                      <TableCell className="text-right">
+                                        {curUser["Total Stock Purchases"]}
+                                      </TableCell>
+                                    </TableRow>
+                                    <TableRow>
+                                      <TableCell className="font-medium">
+                                        - Total Bond Purchases
+                                      </TableCell>
+                                      <TableCell className="text-right">
+                                        {curUser["Total Bond Purchases"]}
+                                      </TableCell>
+                                    </TableRow>
+                                    <TableRow>
+                                      <TableCell className="font-medium">
+                                        - SMG
+                                      </TableCell>
+                                      <TableCell className="text-right">
+                                        {curUser["SMG"]}
+                                      </TableCell>
+                                    </TableRow>
+                                    <TableRow>
+                                      <TableCell className="font-bold">
+                                        Ending Cash
+                                      </TableCell>
+                                      <TableCell className="text-right">
+                                        {curUser["Cash"]}
+                                      </TableCell>
+                                    </TableRow>
+                                  </TableBody>
+                                </Table>
+                              </TabsContent>
+                            </Tabs>
+                          </DialogContent>
+                        </Dialog>
+                      </div>
                     </div>
                   </div>
-
-                  {/* Meetings */}
-                  <div className="p-4 bg-white shadow rounded-lg">
-                    <h2 className="text-lg font-semibold mb-4">
-                      Upcoming Meetings
-                    </h2>
-                    <ScrollArea className="h-64">
+                  <Tabs
+                    defaultValue="meetings"
+                    style={{
+                      width: "100%",
+                      display: "grid",
+                      gridTemplateRows: "10% 90%",
+                    }}
+                  >
+                    <TabsList className="grid w-full grid-cols-2">
+                      <TabsTrigger value="meetings">Meetings</TabsTrigger>
+                      <TabsTrigger value="shop">Shop</TabsTrigger>
+                    </TabsList>
+                    <TabsContent
+                      value="meetings"
+                      className="p-4 bg-white shadow rounded-lg"
+                    >
+                      <h2 className="text-xl font-semibold mb-4">
+                        Upcoming Meetings
+                      </h2>
                       {meetings.length > 0 ? (
-                        <Table>
-                          <TableHeader>
-                            <TableRow>
-                              <TableHead>Topic</TableHead>
-                              <TableHead>Date</TableHead>
-                              <TableHead>Status</TableHead>
-                            </TableRow>
-                          </TableHeader>
-                          <TableBody>
-                            {meetings.map((meeting) => {
-                              const studentFullName = `${studentData["First Name"]} ${studentData["Last Name"]}`;
-                              const isRegistered =
-                                meeting.Attendees?.includes(studentFullName);
+                        <ul className="space-y-4">
+                          {meetings.map((meeting) => {
+                            const isRegistered = meeting.Attendees?.includes(
+                              curUser["First Name"] + " " + curUser["Last Name"]
+                            );
 
-                              return (
-                                <TableRow key={meeting.Topic}>
-                                  <TableCell>{meeting.Topic}</TableCell>
-                                  <TableCell>
-                                    {new Date(meeting.Date).toLocaleString()}
-                                  </TableCell>
-                                  <TableCell>
-                                    {isRegistered ? (
-                                      <span className="px-2 py-1 bg-green-100 text-green-800 rounded-full text-xs">
-                                        Registered
-                                      </span>
-                                    ) : (
-                                      <span className="px-2 py-1 bg-gray-100 text-gray-600 rounded-full text-xs">
-                                        Not Registered
-                                      </span>
-                                    )}
-                                  </TableCell>
-                                </TableRow>
-                              );
-                            })}
-                          </TableBody>
-                        </Table>
+                            return (
+                              <li
+                                key={meeting.Topic}
+                                className="flex justify-between items-center"
+                              >
+                                <div>
+                                  <h3 className="font-bold">{meeting.Topic}</h3>
+                                  <p className="text-sm text-gray-500">
+                                    {formatDate(new Date(meeting.Date))}
+                                  </p>
+                                </div>
+                                {isRegistered ? (
+                                  <Button
+                                    variant="outline"
+                                    className="ml-4 bg-red-50 hover:bg-red-100 text-red-600 border-red-300"
+                                    disabled={loading}
+                                  >
+                                    Unregister
+                                  </Button>
+                                ) : (
+                                  <Button className="ml-4" disabled={loading}>
+                                    Sign Up
+                                  </Button>
+                                )}
+                              </li>
+                            );
+                          })}
+                        </ul>
                       ) : (
-                        <p className="text-muted-foreground">
-                          No upcoming meetings
-                        </p>
+                        <p>No upcoming meetings</p>
                       )}
-                    </ScrollArea>
-                  </div>
+                    </TabsContent>
+                    <TabsContent
+                      value="shop"
+                      className="p-4 bg-white shadow rounded-lg"
+                    >
+                      <h2 className="text-xl font-semibold mb-4">Shop</h2>
+                      {shop.length > 0 ? (
+                        <ul className="space-y-4">
+                          {shop.map((item) => {
+                            return (
+                              <li
+                                key={item.Name}
+                                className="flex justify-between items-center"
+                              >
+                                <div>
+                                  <h3 className="font-bold">{item.Name}</h3>
+                                </div>
+                                {item.Price} Pelicoin
+                                <Button className="ml-4" disabled={loading}>
+                                  Purchase
+                                </Button>
+                              </li>
+                            );
+                          })}
+                        </ul>
+                      ) : (
+                        <p>No upcoming meetings</p>
+                      )}
+                    </TabsContent>
+                  </Tabs>
+                  {/* Meetings */}
+                  {/* <div className="p-4 bg-white shadow rounded-lg">
+            <h2 className="text-xl font-semibold mb-4">Upcoming Meetings</h2>
+            {meetings.length > 0 ? (
+              <ul className="space-y-4">
+                {meetings.map((meeting) => {
+                  const isRegistered = meeting.Attendees?.includes(
+                    curUser["First Name"] + " " + curUser["Last Name"]
+                  );
+
+                  return (
+                    <li
+                      key={meeting.Topic}
+                      className="flex justify-between items-center"
+                    >
+                      <div>
+                        <h3 className="font-bold">{meeting.Topic}</h3>
+                        <p className="text-sm text-gray-500">
+                          {new Date(meeting.Date).toLocaleString()}
+                        </p>
+                      </div>
+                      {isRegistered ? (
+                        <Button
+                          variant="outline"
+                          className="ml-4 bg-red-50 hover:bg-red-100 text-red-600 border-red-300"
+                          disabled={loading}
+                          onClick={() =>
+                            handleUnregister(
+                              meeting.Topic,
+                              meeting.Attendees || []
+                            )
+                          }
+                        >
+                          Unregister
+                        </Button>
+                      ) : (
+                        <Button
+                          className="ml-4"
+                          disabled={loading}
+                          onClick={() =>
+                            handleSignUp(meeting.Topic, meeting.Attendees || [])
+                          }
+                        >
+                          Sign Up
+                        </Button>
+                      )}
+                    </li>
+                  );
+                })}
+              </ul>
+            ) : (
+              <p>No upcoming meetings</p>
+            )}
+          </div> */}
                 </div>
 
                 {/* Ticket Status */}
                 <div className="mt-6 p-4 bg-white shadow rounded-lg">
-                  <h2 className="text-lg font-semibold mb-4">Ticket Status</h2>
-                  <div className="flex items-center justify-center flex-col">
-                    <img
-                      alt="ticket"
-                      src={
-                        studentData["Celebration Ticket"] == 1
-                          ? "/ticket.png"
-                          : "/tickete.png"
-                      }
-                      className="w-24 h-auto mb-2"
-                    />
-                    <p className="text-center">
-                      {studentData["Celebration Ticket"] == 1 ? (
-                        <>
-                          Hooray! You have a ticket for the End-of-Year
-                          Celebration!{" "}
-                        </>
-                      ) : (
-                        <>
-                          Unfortunately, you do not have a ticket for the
-                          End-of-Year celebration :&#x2768;. Please contact Dr.
-                          Fisher to purchase.{" "}
-                        </>
-                      )}
-                    </p>
+                  <h2 className="text-xl font-semibold">Ticket Status</h2>
+                  <img
+                    alt="ticket"
+                    src={
+                      curUser["Celebration Ticket"] == 1
+                        ? "/ticket.png"
+                        : "/tickete.png"
+                    }
+                    style={{
+                      marginLeft: "auto",
+                      marginRight: "auto",
+                      width: "100px",
+                    }}
+                  />
+                  <div style={{ padding: "10px", textAlign: "center" }}>
+                    {curUser["Celebration Ticket"] == 1 ? (
+                      <>
+                        Hooray! You have a ticket for the End-of-Year
+                        Celebration!{" "}
+                      </>
+                    ) : (
+                      <>
+                        Unfortunately, you do not have a ticket for the
+                        End-of-Year celebration :&#x2768;. Please contact Dr.
+                        Fisher to purchase.{" "}
+                      </>
+                    )}
                   </div>
                 </div>
               </div>

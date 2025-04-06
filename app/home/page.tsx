@@ -23,6 +23,7 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { useRouter } from "next/navigation";
+import { toast, Toaster } from "react-hot-toast";
 
 ChartJS.register(ArcElement, Tooltip, Legend);
 
@@ -30,21 +31,30 @@ const Home: React.FC = () => {
   const [curUser, setCurUser] = useState<any>({});
   const [piechartData, setPiechartData] = useState<any>(null);
   const [meetings, setMeetings] = useState<any[]>([]);
+  const [shop, setShop] = useState<any[]>([]);
+
   const [loading, setLoading] = useState(true);
   const [isAuthenticated, setIsAuthenticated] = useState(false);
   const router = useRouter();
 
   const fetchMeetings = async () => {
-    const { data, error } = await supabase.from("Meetings").select();
+    const { data, error } = await supabase
+      .from("Meetings")
+      .select()
+      .order("Date", { ascending: true });
     if (!error) setMeetings(data || []);
+  };
+  const fetchShop = async () => {
+    const { data, error } = await supabase.from("Shop").select();
+    if (!error) setShop(data || []);
   };
 
   const buildPieChartData = (userData: any) => {
     const fields = [
       { key: "Cash", label: "Cash" },
+      { key: "SMG", label: "SMG" },
       { key: "Current Bonds", label: "Current Bonds" },
       { key: "Current Stocks", label: "Current Stocks" },
-      { key: "SMG", label: "SMG" },
       { key: "Bonds +1", label: "+1 Bonds" },
       { key: "Stocks +1", label: "+1 Stocks" },
       { key: "Bonds +2", label: "+2 Bonds" },
@@ -56,18 +66,21 @@ const Home: React.FC = () => {
     const labels: string[] = [];
     const data: number[] = [];
     const colors: string[] = [
-      "#BEADFA",
-      "#D0BFFF",
-      "#DFCCFB",
-      "#E8D8FF",
-      "#F1E3FF",
+      "#fff570",
+      "#57d964",
+      "#8cdb94",
+      "#c6f5cb",
+      "#59b4ff",
+      "#badaf5",
+      "#dd75ff",
+      "#e6b2f7",
+      "#808080",
+      "#c9c9c9",
     ];
 
     fields.forEach(({ key, label }, index) => {
-      if (userData[key] > 0) {
-        labels.push(label);
-        data.push(userData[key]);
-      }
+      labels.push(label);
+      data.push(userData[key]);
     });
 
     setPiechartData({
@@ -79,6 +92,16 @@ const Home: React.FC = () => {
           borderWidth: 1,
         },
       ],
+    });
+  };
+  const formatDate = (dateStr: any) => {
+    return new Date(dateStr).toLocaleString("en-US", {
+      month: "long",
+      day: "numeric",
+      hour: "numeric",
+      minute: "numeric",
+      hour12: true,
+      timeZone: "America/New_York",
     });
   };
 
@@ -98,6 +121,7 @@ const Home: React.FC = () => {
         setIsAuthenticated(true);
         await fetchUserData();
         await fetchMeetings();
+        await fetchShop();
       } catch (error) {
         console.error("Auth check error:", error);
         router.replace("/");
@@ -173,7 +197,11 @@ const Home: React.FC = () => {
     }
   };
 
-  const handleSignUp = async (meetingTopic: string, attendees: string[]) => {
+  const handleSignUp = async (
+    meetingTopic: string,
+    attendees: string[],
+    meetingdate: any
+  ) => {
     setLoading(true);
 
     if (
@@ -196,6 +224,16 @@ const Home: React.FC = () => {
 
     if (!error) {
       fetchMeetings();
+
+      toast.success("Sign Up Succesful!");
+      addNotification(
+        "Sign Ups",
+        `${curUser["First Name"]} ${
+          curUser["Last Name"]
+        } signed up for ${meetingTopic} on ${formatDate(meetingdate)}`,
+        new Date(),
+        Math.floor(Math.random() * 1000000000000000)
+      );
     } else {
       alert("Failed to sign up.");
     }
@@ -205,7 +243,8 @@ const Home: React.FC = () => {
   // New function to handle unregistering from meetings
   const handleUnregister = async (
     meetingTopic: string,
-    attendees: string[]
+    attendees: string[],
+    meetingdate: string
   ) => {
     setLoading(true);
 
@@ -229,11 +268,63 @@ const Home: React.FC = () => {
 
     if (!error) {
       fetchMeetings();
+      toast.success("Succesfully unregistered from " + meetingTopic);
+      addNotification(
+        "Un-registers",
+        `${curUser["First Name"]} ${
+          curUser["Last Name"]
+        } unregistered up from ${meetingTopic} on ${formatDate(meetingdate)}`,
+        new Date(),
+        Math.floor(Math.random() * 1000000000000000)
+      );
     } else {
       alert("Failed to unregister from meeting.");
     }
 
     setLoading(false);
+  };
+
+  const addNotification = async (
+    category: any,
+    content: any,
+    time: any,
+    id: any
+  ) => {
+    const notif = {
+      Category: category,
+      Content: content,
+      Time: time,
+      id: id,
+    };
+
+    const { error } = await supabase.from("Notifications").insert([notif]);
+  };
+  const handlePurchase = async (item: any) => {
+    console.log(curUser["Cash"], item.Price);
+    if (curUser["Cash"] > item.Price) {
+      addNotification(
+        "Purchases",
+        curUser["First Name"] +
+          " " +
+          curUser["Last Name"] +
+          " purchased " +
+          item.Name,
+        new Date(),
+        Math.floor(Math.random() * 1000000000000000)
+      );
+
+      toast.success(
+        "Thank you for buying " +
+          item.Name +
+          "! Please come find Dr. Fisher in Brush."
+      );
+    } else {
+      toast.error(
+        `You do not have enough cash (extra ${
+          item.Price - curUser["Cash"]
+        } Pelicoin required)`
+      );
+    }
   };
 
   // Handle sign out function
@@ -269,6 +360,8 @@ const Home: React.FC = () => {
       className="min-h-screen bg-gray-50 p-4"
       style={{ display: "flex", alignItems: "center" }}
     >
+      {" "}
+      <Toaster />
       <div
         className="max-w-5xl mx-auto"
         style={{
@@ -747,9 +840,114 @@ const Home: React.FC = () => {
               </div>
             </div>
           </div>
+          <Tabs
+            defaultValue="meetings"
+            style={{
+              width: "100%",
+              display: "grid",
+              gridTemplateRows: "10% 90%",
+            }}
+          >
+            <TabsList className="grid w-full grid-cols-2">
+              <TabsTrigger value="meetings">Meetings</TabsTrigger>
+              <TabsTrigger value="shop">Shop</TabsTrigger>
+            </TabsList>
+            <TabsContent
+              value="meetings"
+              className="p-4 bg-white shadow rounded-lg"
+            >
+              <h2 className="text-xl font-semibold mb-4">Upcoming Meetings</h2>
+              {meetings.length > 0 ? (
+                <ul className="space-y-4">
+                  {meetings.map((meeting) => {
+                    const isRegistered = meeting.Attendees?.includes(
+                      curUser["First Name"] + " " + curUser["Last Name"]
+                    );
 
+                    return (
+                      <li
+                        key={meeting.Topic}
+                        className="flex justify-between items-center"
+                      >
+                        <div>
+                          <h3 className="font-bold">{meeting.Topic}</h3>
+                          <p className="text-sm text-gray-500">
+                            {formatDate(new Date(meeting.Date))}
+                          </p>
+                        </div>
+                        {isRegistered ? (
+                          <Button
+                            variant="outline"
+                            className="ml-4 bg-red-50 hover:bg-red-100 text-red-600 border-red-300"
+                            disabled={loading}
+                            onClick={() =>
+                              handleUnregister(
+                                meeting.Topic,
+                                meeting.Attendees || [],
+                                meeting.Date
+                              )
+                            }
+                          >
+                            Unregister
+                          </Button>
+                        ) : (
+                          <Button
+                            className="ml-4"
+                            disabled={loading}
+                            onClick={() =>
+                              handleSignUp(
+                                meeting.Topic,
+                                meeting.Attendees || [],
+                                meeting.Date
+                              )
+                            }
+                          >
+                            Sign Up
+                          </Button>
+                        )}
+                      </li>
+                    );
+                  })}
+                </ul>
+              ) : (
+                <p>No upcoming meetings</p>
+              )}
+            </TabsContent>
+            <TabsContent
+              value="shop"
+              className="p-4 bg-white shadow rounded-lg"
+            >
+              <h2 className="text-xl font-semibold mb-4">Shop</h2>
+              {shop.length > 0 ? (
+                <ul className="space-y-4">
+                  {shop.map((item) => {
+                    return (
+                      <li
+                        key={item.Name}
+                        className="flex justify-between items-center"
+                      >
+                        <div>
+                          <h3 className="font-bold">{item.Name}</h3>
+                        </div>
+                        {item.Price} Pelicoin
+                        <Button
+                          className="ml-4"
+                          disabled={loading}
+                          onClick={() => handlePurchase(item)}
+                        >
+                          Purchase
+                        </Button>
+                      </li>
+                    );
+                  })}
+                </ul>
+              ) : (
+                <p>No upcoming meetings</p>
+              )}
+            </TabsContent>
+          </Tabs>
           {/* Meetings */}
-          <div className="p-4 bg-white shadow rounded-lg">
+          {/* <div className="p-4 bg-white shadow rounded-lg">
             <h2 className="text-xl font-semibold mb-4">Upcoming Meetings</h2>
             {meetings.length > 0 ? (
               <ul className="space-y-4">
@@ -801,7 +999,7 @@ const Home: React.FC = () => {
             ) : (
               <p>No upcoming meetings</p>
             )}
-          </div>
+          </div> */}
         </div>
 
         {/* Ticket Status */}
@@ -809,7 +1007,11 @@ const Home: React.FC = () => {
           <h2 className="text-xl font-semibold">Ticket Status</h2>
           <img
             alt="ticket"
-            src={curUser["Ticket"] == 1 ? "/ticket.png" : "/tickete.png"}
+            src={
+              curUser["Celebration Ticket"] == 1
+                ? "/ticket.png"
+                : "/tickete.png"
+            }
             style={{
               marginLeft: "auto",
               marginRight: "auto",
@@ -817,7 +1019,7 @@ const Home: React.FC = () => {
             }}
           />
           <div style={{ padding: "10px", textAlign: "center" }}>
-            {curUser["Ticket"] == 1 ? (
+            {curUser["Celebration Ticket"] == 1 ? (
               <>Hooray! You have a ticket for the End-of-Year Celebration! </>
             ) : (
               <>
