@@ -52,27 +52,37 @@ export default function UpcomingMeetings() {
     }
   };
 
-  // Generate time options for every. 30 minutes
-  const timeOptions = React.useMemo(() => {
-    const times = [];
-    for (let hour = 0; hour < 24; hour++) {
-      for (let minute of [0, 30]) {
-        const hourFormatted = hour.toString().padStart(2, "0");
-        const minuteFormatted = minute.toString().padStart(2, "0");
-        const time = `${hourFormatted}:${minuteFormatted}`;
-        times.push(time);
-      }
-    }
-    return times;
-  }, []);
+  // Validate time input format (HH:MM in 24-hour format)
+  const validateTimeInput = (time) => {
+    const timeRegex = /^([01]?[0-9]|2[0-3]):([0-5][0-9])$/;
+    return timeRegex.test(time);
+  };
 
   // Format time from 24h to 12h format for display
   const formatTimeForDisplay = (time) => {
+    if (!time || !validateTimeInput(time)) return time;
+
     const [hours, minutes] = time.split(":");
     const hour = parseInt(hours, 10);
     const ampm = hour >= 12 ? "PM" : "AM";
     const hour12 = hour % 12 || 12;
     return `${hour12}:${minutes} ${ampm}`;
+  };
+
+  // Format time input to ensure it's in HH:MM format
+  const formatTimeInput = (input) => {
+    // Remove non-numeric and non-colon characters
+    let cleaned = input.replace(/[^\d:]/g, "");
+
+    // Handle colon placement
+    if (cleaned.length > 2 && !cleaned.includes(":")) {
+      cleaned = cleaned.slice(0, 2) + ":" + cleaned.slice(2);
+    }
+
+    // Limit to 5 characters (HH:MM)
+    cleaned = cleaned.slice(0, 5);
+
+    return cleaned;
   };
 
   const fetchData = async () => {
@@ -103,15 +113,17 @@ export default function UpcomingMeetings() {
 
   const handleAddMeeting = async () => {
     if (!newEventName || !newEventDate || !newEventTime) {
-      toast.error("Please fill in the values");
+      toast.error("Please fill in all values");
+      return;
+    }
+
+    if (!validateTimeInput(newEventTime)) {
+      toast.error("Please enter a valid time in HH:MM format");
       return;
     }
 
     // Combine date and time
-    const combinedDateTime = new Date(newEventDate).toLocaleTimeString(
-      "en-US",
-      { timeZone: "America/New_York" }
-    );
+    const combinedDateTime = new Date(newEventDate);
     const [hours, minutes] = newEventTime.split(":");
     combinedDateTime.setHours(parseInt(hours), parseInt(minutes), 0, 0);
 
@@ -129,7 +141,7 @@ export default function UpcomingMeetings() {
       console.error("Error adding meeting:", error);
       toast.error("Failed to add meeting");
     } else {
-      toast.success("Meeting added succesfully");
+      toast.success("Meeting added successfully");
       handleSubmit();
       setNewEventName("");
       setNewEventDate(undefined);
@@ -148,7 +160,7 @@ export default function UpcomingMeetings() {
       console.error("Error deleting meeting:", error);
       toast.error("Failed to delete meeting");
     } else {
-      toast.success("Meeting deleted succesfully");
+      toast.success("Meeting deleted successfully");
       fetchData();
     }
   };
@@ -262,40 +274,19 @@ export default function UpcomingMeetings() {
                   />
                 </PopoverContent>
               </Popover>
-              <Popover>
-                <PopoverTrigger asChild>
-                  <Button
-                    variant="outline"
-                    className={cn(
-                      "w-full justify-start text-left font-normal",
-                      !newEventTime && "text-muted-foreground"
-                    )}
-                  >
-                    <Clock className="mr-2 h-4 w-4" />
-                    {newEventTime ? (
-                      formatTimeForDisplay(newEventTime)
-                    ) : (
-                      <span>Select time</span>
-                    )}
-                  </Button>
-                </PopoverTrigger>
-                <PopoverContent className="w-64 p-0">
-                  <ScrollArea className="h-72">
-                    <div className="grid grid-cols-1 gap-1 p-2">
-                      {timeOptions.map((time) => (
-                        <Button
-                          key={time}
-                          variant={newEventTime === time ? "default" : "ghost"}
-                          className="justify-start text-left"
-                          onClick={() => setNewEventTime(time)}
-                        >
-                          {formatTimeForDisplay(time)}
-                        </Button>
-                      ))}
-                    </div>
-                  </ScrollArea>
-                </PopoverContent>
-              </Popover>
+              <div className="relative">
+                <div className="absolute inset-y-0 left-0 flex items-center pl-3 pointer-events-none">
+                  <Clock className="h-4 w-4 text-gray-400" />
+                </div>
+                <Input
+                  placeholder="Enter time (HH:MM)"
+                  value={newEventTime}
+                  onChange={(e) =>
+                    setNewEventTime(formatTimeInput(e.target.value))
+                  }
+                  className="pl-10"
+                />
+              </div>
             </div>
             <Button onClick={handleAddMeeting} className="mt-4">
               Add Meeting

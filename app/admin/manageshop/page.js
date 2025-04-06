@@ -101,7 +101,7 @@ export default function UpcomingMeetings() {
 
   const handleDeleteItem = async (item) => {
     const { error } = await supabase
-      .from("Meetings")
+      .from("Shop")
       .delete()
       .match({ Name: item.Name });
 
@@ -109,7 +109,7 @@ export default function UpcomingMeetings() {
       console.error("Error deleting meeting:", error);
       toast.error("Failed to delete meeting");
     } else {
-      toast.success("Meeting deleted succesfully");
+      toast.success("Item deleted succesfully");
       fetchData();
     }
   };
@@ -159,9 +159,7 @@ export default function UpcomingMeetings() {
                           <Button
                             variant="ghost"
                             size="icon"
-                            onClick={() =>
-                              handleDeleteMeeting(row.Topic, row.Date)
-                            }
+                            onClick={() => handleDeleteItem(row)}
                             className="text-red-500 hover:text-red-700"
                           >
                             <Trash2 className="h-5 w-5" />
