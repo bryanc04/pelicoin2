@@ -422,7 +422,7 @@ const Home: React.FC = () => {
                       View statements
                     </Button>
                   </DialogTrigger>
-                  <DialogContent className="sm:max-w-[425px] overflow-y-scroll max-h-screen">
+                  <DialogContent className="sm:max-w-[70vw] overflow-y-scroll max-h-screen">
                     <DialogHeader>
                       <DialogTitle>Statements</DialogTitle>
                     </DialogHeader>
@@ -432,7 +432,7 @@ const Home: React.FC = () => {
                           value="financial"
                           className="w-[100%] font-bold"
                         >
-                          Financial Statement
+                          Balance Sheet
                         </TabsTrigger>
                         <TabsTrigger
                           value="incometax"
@@ -440,10 +440,16 @@ const Home: React.FC = () => {
                         >
                           Income/Tax Statement
                         </TabsTrigger>
+                        <TabsTrigger
+                          value="cashflowstatement"
+                          className="w-[100%] font-bold"
+                        >
+                          Statement of Cash Flow
+                        </TabsTrigger>
                       </TabsList>
                       <TabsContent value="financial">
                         <Table>
-                          <TableCaption>Your financial statment.</TableCaption>
+                          <TableCaption>Your balance sheet.</TableCaption>
                           <TableHeader>
                             <TableRow>
                               <TableHead className="w-[100px]">
@@ -707,6 +713,23 @@ const Home: React.FC = () => {
                               <TableCell className="font-bold"></TableCell>
                               <TableCell className="text-right"></TableCell>
                             </TableRow>
+                          </TableBody>
+                        </Table>
+                      </TabsContent>
+                      <TabsContent value="cashflowstatement">
+                        <Table>
+                          <TableCaption>
+                            Your Statement of Cash flow
+                          </TableCaption>
+                          <TableHeader>
+                            <TableRow>
+                              <TableHead className="w-[200px]">Name</TableHead>
+                              <TableHead className="text-right">
+                                Value
+                              </TableHead>
+                            </TableRow>
+                          </TableHeader>
+                          <TableBody>
                             <TableRow>
                               <TableCell className="font-bold">
                                 Beginning Cash Balance
