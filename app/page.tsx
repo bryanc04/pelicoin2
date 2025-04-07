@@ -182,7 +182,7 @@ export default function Home() {
                   <path fill="#00adef" d="M1 12h10v10H1z" />
                   <path fill="#fbbc09" d="M12 12h10v10H12z" />
                 </svg>
-                Sign in with Microsoft
+                Sign in with your Loomis account
               </>
             )}
           </Button>
