@@ -108,6 +108,9 @@ export default function Home() {
 
       // Start animation
       animationRef.current = requestAnimationFrame(animateCoins);
+    } else {
+      // Clear any existing coins on mobile
+      setCoins([]);
     }
 
     // Cleanup function
