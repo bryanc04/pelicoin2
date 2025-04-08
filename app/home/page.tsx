@@ -43,6 +43,7 @@ const Home: React.FC = () => {
   const [piechartData, setPiechartData] = useState<any>(null);
   const [meetings, setMeetings] = useState<Meeting[]>([]);
   const [shop, setShop] = useState<ShopItem[]>([]);
+  const [isMobile, setIsMobile] = useState(false);
 
   const [loading, setLoading] = useState(false);
   const [isAuthenticated, setIsAuthenticated] = useState(false);
@@ -53,6 +54,34 @@ const Home: React.FC = () => {
     message: string;
     image?: string;
   }>({ title: "", message: "" });
+
+  // Add mobile detection
+  useEffect(() => {
+    const checkMobile = () => {
+      setIsMobile(window.innerWidth < 768);
+    };
+
+    checkMobile();
+    window.addEventListener("resize", checkMobile);
+
+    return () => window.removeEventListener("resize", checkMobile);
+  }, []);
+
+  // Update chart options based on mobile state
+  const chartOptions = {
+    plugins: {
+      legend: {
+        position: (isMobile ? "bottom" : "right") as "bottom" | "right",
+        labels: {
+          boxWidth: 12,
+          font: {
+            size: isMobile ? 9 : 10,
+          },
+        },
+      },
+    },
+    maintainAspectRatio: false,
+  };
 
   const fetchMeetings = async () => {
     console.log("Fetching meetings...");
@@ -395,29 +424,19 @@ const Home: React.FC = () => {
           </Button>
         </header>
 
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-8 h-[40vh]">
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-8 md:h-[40vh] mb-4 md:mb-0">
           {/* Pie Chart */}
-          <div className="p-6 bg-white shadow rounded-lg flex flex-col h-[inherit]">
+          <div className="p-6 bg-white shadow rounded-lg flex flex-col min-h-[300px] md:h-full">
             <h2 className="text-xl font-semibold mb-6">Portfolio Breakdown</h2>
             {piechartData ? (
-              <div className="w-full aspect-square max-w-xs mx-auto flex-1 flex items-center h-[40%]">
-                <Pie
-                  options={{
-                    plugins: {
-                      legend: {
-                        position: "bottom",
-                        labels: {
-                          boxWidth: 12,
-                          font: {
-                            size: 10,
-                          },
-                        },
-                      },
-                    },
-                    maintainAspectRatio: false,
-                  }}
-                  data={piechartData}
-                />
+              <div
+                className={`w-full aspect-square ${
+                  isMobile ? "max-w-[250px]" : "max-w-xs"
+                } mx-auto flex-1 flex items-center ${
+                  isMobile ? "h-[200px]" : "h-[40%]"
+                }`}
+              >
+                <Pie options={chartOptions} data={piechartData} />
               </div>
             ) : (
               <p>No data available</p>
@@ -875,124 +894,132 @@ const Home: React.FC = () => {
             </div>
           </div>
 
-          <Tabs defaultValue="meetings" className="w-full flex flex-col">
-            <TabsList className="grid w-full grid-cols-2">
-              <TabsTrigger value="meetings">Meetings</TabsTrigger>
-              <TabsTrigger value="shop">Shop</TabsTrigger>
-            </TabsList>
-            <div className="relative h-[100%]">
-              <TabsContent
-                value="meetings"
-                className="absolute inset-0 p-6 bg-white shadow rounded-lg overflow-hidden flex flex-col"
-              >
-                <h2
-                  className="text-xl font-semibold mb-4"
-                  style={{ zIndex: "1" }}
+          <div className="min-h-[400px] md:h-full">
+            <Tabs
+              defaultValue="meetings"
+              className="w-full h-full flex flex-col"
+            >
+              <TabsList className="grid w-full grid-cols-2">
+                <TabsTrigger value="meetings">Meetings</TabsTrigger>
+                <TabsTrigger value="shop">Shop</TabsTrigger>
+              </TabsList>
+              <div className="relative flex-1">
+                <TabsContent
+                  value="meetings"
+                  className="absolute inset-0 p-6 bg-white shadow rounded-lg overflow-hidden flex flex-col"
                 >
-                  Upcoming Meetings
-                </h2>
-                <div className="flex-1 overflow-y-auto" style={{ zIndex: "1" }}>
-                  {meetings.length > 0 ? (
-                    <ul className="space-y-4">
-                      {meetings.map((meeting) => {
-                        const isRegistered = meeting.Attendees?.includes(
-                          curUser["First Name"] + " " + curUser["Last Name"]
-                        );
+                  <h2
+                    className="text-xl font-semibold mb-4"
+                    style={{ zIndex: "1" }}
+                  >
+                    Upcoming Meetings
+                  </h2>
+                  <div
+                    className="flex-1 overflow-y-auto min-h-0"
+                    style={{ zIndex: "1" }}
+                  >
+                    {meetings.length > 0 ? (
+                      <ul className="space-y-4">
+                        {meetings.map((meeting) => {
+                          const isRegistered = meeting.Attendees?.includes(
+                            curUser["First Name"] + " " + curUser["Last Name"]
+                          );
 
-                        return (
+                          return (
+                            <li
+                              key={meeting.Topic}
+                              className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3 p-4 bg-gray-50 rounded-lg"
+                            >
+                              <div>
+                                <h3 className="font-bold text-sm sm:text-base">
+                                  {meeting.Topic}
+                                </h3>
+                                <p className="text-xs sm:text-sm text-gray-500">
+                                  {formatDate(new Date(meeting.Date))}
+                                </p>
+                              </div>
+                              {isRegistered ? (
+                                <Button
+                                  variant="outline"
+                                  className="w-full sm:w-auto bg-red-50 hover:bg-red-100 text-red-600 border-red-300"
+                                  disabled={loading}
+                                  onClick={() =>
+                                    handleUnregister(
+                                      meeting.Topic,
+                                      meeting.Attendees || [],
+                                      meeting.Date
+                                    )
+                                  }
+                                >
+                                  Unregister
+                                </Button>
+                              ) : (
+                                <Button
+                                  className="w-full sm:w-auto"
+                                  disabled={loading}
+                                  onClick={() =>
+                                    handleSignUp(
+                                      meeting.Topic,
+                                      meeting.Attendees || [],
+                                      meeting.Date
+                                    )
+                                  }
+                                >
+                                  Sign Up
+                                </Button>
+                              )}
+                            </li>
+                          );
+                        })}
+                      </ul>
+                    ) : (
+                      <p>No upcoming meetings</p>
+                    )}
+                  </div>
+                </TabsContent>
+                <TabsContent
+                  value="shop"
+                  className="absolute inset-0 p-6 bg-white shadow rounded-lg overflow-hidden flex flex-col"
+                >
+                  <h2 className="text-xl font-semibold mb-4">Shop</h2>
+                  <div className="flex-1 overflow-y-auto min-h-0">
+                    {shop.length > 0 ? (
+                      <ul className="space-y-4">
+                        {shop.map((item) => (
                           <li
-                            key={meeting.Topic}
+                            key={item.Name}
                             className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3 p-4 bg-gray-50 rounded-lg"
                           >
                             <div>
                               <h3 className="font-bold text-sm sm:text-base">
-                                {meeting.Topic}
+                                {item.Name}
                               </h3>
-                              <p className="text-xs sm:text-sm text-gray-500">
-                                {formatDate(new Date(meeting.Date))}
+                              <p className="text-sm text-gray-600">
+                                {item.Price} Pelicoin
                               </p>
                             </div>
-                            {isRegistered ? (
-                              <Button
-                                variant="outline"
-                                className="w-full sm:w-auto bg-red-50 hover:bg-red-100 text-red-600 border-red-300"
-                                disabled={loading}
-                                onClick={() =>
-                                  handleUnregister(
-                                    meeting.Topic,
-                                    meeting.Attendees || [],
-                                    meeting.Date
-                                  )
-                                }
-                              >
-                                Unregister
-                              </Button>
-                            ) : (
-                              <Button
-                                className="w-full sm:w-auto"
-                                disabled={loading}
-                                onClick={() =>
-                                  handleSignUp(
-                                    meeting.Topic,
-                                    meeting.Attendees || [],
-                                    meeting.Date
-                                  )
-                                }
-                              >
-                                Sign Up
-                              </Button>
-                            )}
+                            <Button
+                              className="w-full sm:w-auto"
+                              disabled={loading}
+                              onClick={() => handlePurchase(item)}
+                            >
+                              Purchase
+                            </Button>
                           </li>
-                        );
-                      })}
-                    </ul>
-                  ) : (
-                    <p>No upcoming meetings</p>
-                  )}
-                </div>
-              </TabsContent>
-              <TabsContent
-                value="shop"
-                className="absolute inset-0 p-6 bg-white shadow rounded-lg overflow-hidden flex flex-col"
-              >
-                <h2 className="text-xl font-semibold mb-4">Shop</h2>
-                <div className="flex-1 overflow-y-auto">
-                  {shop.length > 0 ? (
-                    <ul className="space-y-4">
-                      {shop.map((item) => (
-                        <li
-                          key={item.Name}
-                          className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3 p-4 bg-gray-50 rounded-lg"
-                        >
-                          <div>
-                            <h3 className="font-bold text-sm sm:text-base">
-                              {item.Name}
-                            </h3>
-                            <p className="text-sm text-gray-600">
-                              {item.Price} Pelicoin
-                            </p>
-                          </div>
-                          <Button
-                            className="w-full sm:w-auto"
-                            disabled={loading}
-                            onClick={() => handlePurchase(item)}
-                          >
-                            Purchase
-                          </Button>
-                        </li>
-                      ))}
-                    </ul>
-                  ) : (
-                    <p>No items available</p>
-                  )}
-                </div>
-              </TabsContent>
-            </div>
-          </Tabs>
+                        ))}
+                      </ul>
+                    ) : (
+                      <p>No items available</p>
+                    )}
+                  </div>
+                </TabsContent>
+              </div>
+            </Tabs>
+          </div>
         </div>
 
         {/* Ticket Status */}
-        <div className="mt-8 p-6 bg-white shadow rounded-lg h-[20vh]">
+        <div className="mt-8 md:mt-8 p-6 bg-white shadow rounded-lg min-h-[150px] md:h-[20vh]">
           <h2 className="text-xl font-semibold text-center">Ticket Status</h2>
           <div className="flex items-center justify-center h-full gap-4">
             <img
