@@ -20,6 +20,12 @@ export default function Home() {
   const [loading, setLoading] = useState(false);
   const [message, setMessage] = useState("");
   const [coins, setCoins] = useState<Coin[]>([]); // Properly typed state
+  const [waveOptions, setWaveOptions] = useState({
+    height: 70,
+    amplitude: 40,
+    speed: 0.25,
+    points: 4,
+  });
   const router = useRouter();
   const animationRef = useRef<number | null>(null);
   const lastCoinTimeRef = useRef(0);
@@ -56,7 +62,29 @@ export default function Home() {
 
     handleRedirect();
 
-    // Only run coin animation on non-mobile devices
+    // Cleanup function for auth listener
+    return () => {
+      authListener?.subscription.unsubscribe();
+    };
+  }, [router]);
+
+  // Set wave options after mount
+  useEffect(() => {
+    if (typeof window !== "undefined") {
+      setWaveOptions({
+        height: window.innerWidth < 768 ? 50 : 70,
+        amplitude: window.innerWidth < 768 ? 30 : 40,
+        speed: 0.25,
+        points: 4,
+      });
+    }
+  }, []);
+
+  // Separate useEffect for coin animation
+  useEffect(() => {
+    // Only run on client side
+    if (typeof window === "undefined") return;
+
     const isMobile = window.innerWidth < 768;
     if (!isMobile) {
       // Get viewport dimensions
@@ -108,19 +136,30 @@ export default function Home() {
 
       // Start animation
       animationRef.current = requestAnimationFrame(animateCoins);
-    } else {
-      // Clear any existing coins on mobile
-      setCoins([]);
-    }
 
-    // Cleanup function
-    return () => {
-      authListener?.subscription.unsubscribe();
-      if (animationRef.current) {
-        cancelAnimationFrame(animationRef.current);
-      }
-    };
-  }, [router]);
+      // Handle window resize
+      const handleResize = () => {
+        const isMobile = window.innerWidth < 768;
+        if (isMobile) {
+          setCoins([]);
+          if (animationRef.current) {
+            cancelAnimationFrame(animationRef.current);
+            animationRef.current = null;
+          }
+        }
+      };
+
+      window.addEventListener("resize", handleResize);
+
+      // Cleanup function
+      return () => {
+        if (animationRef.current) {
+          cancelAnimationFrame(animationRef.current);
+        }
+        window.removeEventListener("resize", handleResize);
+      };
+    }
+  }, []);
 
   // Handle Microsoft sign-in
   const handleMicrosoftSignIn = async () => {
@@ -213,12 +252,7 @@ export default function Home() {
           left: "0",
           height: "35%",
         }}
-        options={{
-          height: window.innerWidth < 768 ? 50 : 70,
-          amplitude: window.innerWidth < 768 ? 30 : 40,
-          speed: 0.25,
-          points: 4,
-        }}
+        options={waveOptions}
       />
 
       {/* Add styles for the always-visible rainbow animation */}
