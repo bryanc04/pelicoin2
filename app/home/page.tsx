@@ -395,12 +395,12 @@ const Home: React.FC = () => {
           </Button>
         </header>
 
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-8 h-[40vh]">
           {/* Pie Chart */}
-          <div className="p-6 bg-white shadow rounded-lg flex flex-col">
+          <div className="p-6 bg-white shadow rounded-lg flex flex-col h-[inherit]">
             <h2 className="text-xl font-semibold mb-6">Portfolio Breakdown</h2>
             {piechartData ? (
-              <div className="w-full aspect-square max-w-xs mx-auto flex-1 flex items-center">
+              <div className="w-full aspect-square max-w-xs mx-auto flex-1 flex items-center h-[40%]">
                 <Pie
                   options={{
                     plugins: {
@@ -880,7 +880,7 @@ const Home: React.FC = () => {
               <TabsTrigger value="meetings">Meetings</TabsTrigger>
               <TabsTrigger value="shop">Shop</TabsTrigger>
             </TabsList>
-            <div className="relative h-[40vh]">
+            <div className="relative h-[100%]">
               <TabsContent
                 value="meetings"
                 className="absolute inset-0 p-6 bg-white shadow rounded-lg overflow-hidden flex flex-col"
@@ -992,9 +992,9 @@ const Home: React.FC = () => {
         </div>
 
         {/* Ticket Status */}
-        <div className="mt-8 p-6 bg-white shadow rounded-lg">
+        <div className="mt-8 p-6 bg-white shadow rounded-lg h-[20vh]">
           <h2 className="text-xl font-semibold text-center">Ticket Status</h2>
-          <div className="flex flex-col items-center gap-4 mt-6">
+          <div className="flex items-center justify-center h-full gap-4">
             <img
               alt="ticket"
               src={
@@ -1004,7 +1004,7 @@ const Home: React.FC = () => {
               }
               className="w-24 h-auto"
             />
-            <p className="text-center text-sm sm:text-base">
+            <p className="text-right text-sm sm:text-base max-w-[60%]">
               {curUser["Celebration Ticket"] == 1 ? (
                 <>Hooray! You have a ticket for the End-of-Year Celebration!</>
               ) : (
