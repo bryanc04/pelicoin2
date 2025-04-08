@@ -56,59 +56,59 @@ export default function Home() {
 
     handleRedirect();
 
-    // Get viewport dimensions
-    const screenWidth = window.innerWidth;
-    const screenHeight = window.innerHeight;
-    const waveHeight = screenHeight * 0.35;
-    const waveTop = screenHeight - waveHeight;
+    // Only run coin animation on non-mobile devices
+    const isMobile = window.innerWidth < 768;
+    if (!isMobile) {
+      // Get viewport dimensions
+      const screenWidth = window.innerWidth;
+      const screenHeight = window.innerHeight;
+      const waveHeight = screenHeight * 0.35;
+      const waveTop = screenHeight - waveHeight;
 
-    // Function to create a new coin
-    const createCoin = () => {
-      const now = Date.now();
-      // Adjust coin creation frequency for mobile
-      const isMobile = window.innerWidth < 768;
-      const minDelay = isMobile ? 500 : 300;
-      const maxDelay = isMobile ? 800 : 400;
+      // Function to create a new coin
+      const createCoin = () => {
+        const now = Date.now();
+        const minDelay = 300;
+        const maxDelay = 400;
 
-      if (
-        now - lastCoinTimeRef.current >
-        Math.random() * (maxDelay - minDelay) + minDelay
-      ) {
-        lastCoinTimeRef.current = now;
+        if (
+          now - lastCoinTimeRef.current >
+          Math.random() * (maxDelay - minDelay) + minDelay
+        ) {
+          lastCoinTimeRef.current = now;
 
-        const newCoin: Coin = {
-          id: Math.random().toString(),
-          x: Math.random() * screenWidth,
-          y: -50,
-          velocity: 1 + Math.random() * 2,
-          // Adjust coin size for mobile
-          size: isMobile ? 30 + Math.random() * 10 : 45 + Math.random() * 15,
-        };
+          const newCoin: Coin = {
+            id: Math.random().toString(),
+            x: Math.random() * screenWidth,
+            y: -50,
+            velocity: 1 + Math.random() * 2,
+            size: 45 + Math.random() * 15,
+          };
 
-        setCoins((prevCoins) => [...prevCoins, newCoin]);
-      }
-    };
+          setCoins((prevCoins) => [...prevCoins, newCoin]);
+        }
+      };
 
-    // Function to animate all coins
-    const animateCoins = () => {
-      createCoin();
+      // Function to animate all coins
+      const animateCoins = () => {
+        createCoin();
 
-      setCoins((prevCoins) =>
-        prevCoins
-          .map((coin) => ({
-            ...coin,
-            y: coin.y + coin.velocity,
-            velocity: coin.velocity + 0.1, // Add gravity effect
-          }))
-          // Remove coins that have touched the wave
-          .filter((coin) => coin.y < waveTop)
-      );
+        setCoins((prevCoins) =>
+          prevCoins
+            .map((coin) => ({
+              ...coin,
+              y: coin.y + coin.velocity,
+              velocity: coin.velocity + 0.1,
+            }))
+            .filter((coin) => coin.y < waveTop)
+        );
 
+        animationRef.current = requestAnimationFrame(animateCoins);
+      };
+
+      // Start animation
       animationRef.current = requestAnimationFrame(animateCoins);
-    };
-
-    // Start animation
-    animationRef.current = requestAnimationFrame(animateCoins);
+    }
 
     // Cleanup function
     return () => {

@@ -27,22 +27,45 @@ import { toast, Toaster } from "react-hot-toast";
 
 ChartJS.register(ArcElement, Tooltip, Legend);
 
-const Home: React.FC = () => {
-  const [curUser, setCurUser] = useState<any>({});
-  const [piechartData, setPiechartData] = useState<any>(null);
-  const [meetings, setMeetings] = useState<any[]>([]);
-  const [shop, setShop] = useState<any[]>([]);
+interface Meeting {
+  Topic: string;
+  Date: string;
+  Attendees?: string[];
+}
 
-  const [loading, setLoading] = useState(true);
+interface ShopItem {
+  Name: string;
+  Price: number;
+}
+
+const Home: React.FC = () => {
+  const [curUser, setCurUser] = useState<any>(null);
+  const [piechartData, setPiechartData] = useState<any>(null);
+  const [meetings, setMeetings] = useState<Meeting[]>([]);
+  const [shop, setShop] = useState<ShopItem[]>([]);
+
+  const [loading, setLoading] = useState(false);
   const [isAuthenticated, setIsAuthenticated] = useState(false);
   const router = useRouter();
+  const [showDialog, setShowDialog] = useState(false);
+  const [dialogContent, setDialogContent] = useState<{
+    title: string;
+    message: string;
+    image?: string;
+  }>({ title: "", message: "" });
 
   const fetchMeetings = async () => {
+    console.log("Fetching meetings...");
     const { data, error } = await supabase
       .from("Meetings")
       .select()
       .order("Date", { ascending: true });
-    if (!error) setMeetings(data || []);
+    if (!error) {
+      console.log("Fetched meetings:", data);
+      setMeetings(data || []);
+    } else {
+      console.error("Error fetching meetings:", error);
+    }
   };
   const fetchShop = async () => {
     const { data, error } = await supabase.from("Shop").select();
@@ -356,95 +379,83 @@ const Home: React.FC = () => {
   }
 
   return (
-    <div
-      className="min-h-screen bg-gray-50 p-4"
-      style={{ display: "flex", alignItems: "center" }}
-    >
-      {" "}
+    <div className="min-h-screen bg-gray-50 py-8 px-4 flex items-center">
       <Toaster />
-      <div
-        className="max-w-5xl mx-auto"
-        style={{
-          position: "relative",
-          transform: "translateY(-40px)",
-          top: "50%",
-          width: "70vw",
-        }}
-      >
-        <header className="mb-6 flex justify-between items-center">
-          <h1 className="text-3xl font-bold">
+      <div className="max-w-4xl mx-auto w-full">
+        <header className="mb-8 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
+          <h1 className="text-2xl sm:text-3xl font-bold">
             Hi, {curUser["First Name"] || "User"}!
           </h1>
           <Button
             onClick={handleSignOut}
             variant="outline"
-            className="bg-red-50 hover:bg-red-100 text-red-600 border-red-300"
+            className="bg-red-50 hover:bg-red-100 text-red-600 border-red-300 w-full sm:w-auto"
           >
             Sign Out
           </Button>
         </header>
 
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
           {/* Pie Chart */}
-          <div className="p-4 bg-white shadow rounded-lg">
-            <h2 className="text-xl font-semibold mb-4">Portfolio Breakdown</h2>
+          <div className="p-6 bg-white shadow rounded-lg flex flex-col">
+            <h2 className="text-xl font-semibold mb-6">Portfolio Breakdown</h2>
             {piechartData ? (
-              <Pie
-                options={{
-                  plugins: {
-                    legend: {
-                      position: "right",
+              <div className="w-full aspect-square max-w-xs mx-auto flex-1 flex items-center">
+                <Pie
+                  options={{
+                    plugins: {
+                      legend: {
+                        position: "bottom",
+                        labels: {
+                          boxWidth: 12,
+                          font: {
+                            size: 10,
+                          },
+                        },
+                      },
                     },
-                  },
-                }}
-                style={{
-                  width: "70%",
-                  height: "70%",
-                  marginLeft: "auto",
-                  marginRight: "auto",
-                }}
-                data={piechartData}
-              />
+                    maintainAspectRatio: false,
+                  }}
+                  data={piechartData}
+                />
+              </div>
             ) : (
               <p>No data available</p>
             )}
-            <p className="text-center mt-4 font-medium mt-[-30px]">
-              Net Worth: {curUser["Net Worth"] || 0} Pelicoin
-            </p>
-            <div className="flex justify-center">
-              <div>
+            <div className="mt-6">
+              <p className="text-center font-medium">
+                Net Worth: {curUser["Net Worth"] || 0} Pelicoin
+              </p>
+              <div className="flex justify-center mt-4">
                 <Dialog>
                   <DialogTrigger asChild>
-                    <Button
-                      variant="link"
-                      className="mr-[auto] ml-[auto] text-blue-600"
-                    >
+                    <Button variant="link" className="text-blue-600">
                       View statements
                     </Button>
                   </DialogTrigger>
-                  <DialogContent className="sm:max-w-[70vw] overflow-y-scroll max-h-screen">
+                  <DialogContent className="sm:max-w-[80vw] max-h-[80vh] overflow-y-auto">
                     <DialogHeader>
                       <DialogTitle>Statements</DialogTitle>
                     </DialogHeader>
-                    <Tabs defaultValue="financial" className="w-[100%]">
-                      <TabsList className="w-[100%]">
+                    <Tabs defaultValue="financial" className="w-full">
+                      <TabsList className="w-full grid grid-cols-3">
                         <TabsTrigger
                           value="financial"
-                          className="w-[100%] font-bold"
+                          className="text-xs sm:text-sm"
                         >
                           Balance Sheet
                         </TabsTrigger>
                         <TabsTrigger
                           value="incometax"
-                          className="w-[100%] font-bold"
+                          className="text-xs sm:text-sm"
                         >
-                          Income/Tax Statement
+                          Income/Tax
                         </TabsTrigger>
                         <TabsTrigger
                           value="cashflowstatement"
-                          className="w-[100%] font-bold"
+                          className="text-xs sm:text-sm"
                         >
-                          Statement of Cash Flow
+                          Cash Flow
                         </TabsTrigger>
                       </TabsList>
                       <TabsContent value="financial">
@@ -863,193 +874,146 @@ const Home: React.FC = () => {
               </div>
             </div>
           </div>
-          <Tabs
-            defaultValue="meetings"
-            style={{
-              width: "100%",
-              display: "grid",
-              gridTemplateRows: "10% 90%",
-            }}
-          >
+
+          <Tabs defaultValue="meetings" className="w-full flex flex-col">
             <TabsList className="grid w-full grid-cols-2">
               <TabsTrigger value="meetings">Meetings</TabsTrigger>
               <TabsTrigger value="shop">Shop</TabsTrigger>
             </TabsList>
-            <TabsContent
-              value="meetings"
-              className="p-4 bg-white shadow rounded-lg"
-            >
-              <h2 className="text-xl font-semibold mb-4">Upcoming Meetings</h2>
-              {meetings.length > 0 ? (
-                <ul className="space-y-4">
-                  {meetings.map((meeting) => {
-                    const isRegistered = meeting.Attendees?.includes(
-                      curUser["First Name"] + " " + curUser["Last Name"]
-                    );
+            <div className="relative h-[40vh]">
+              <TabsContent
+                value="meetings"
+                className="absolute inset-0 p-6 bg-white shadow rounded-lg overflow-hidden flex flex-col"
+              >
+                <h2
+                  className="text-xl font-semibold mb-4"
+                  style={{ zIndex: "1" }}
+                >
+                  Upcoming Meetings
+                </h2>
+                <div className="flex-1 overflow-y-auto" style={{ zIndex: "1" }}>
+                  {meetings.length > 0 ? (
+                    <ul className="space-y-4">
+                      {meetings.map((meeting) => {
+                        const isRegistered = meeting.Attendees?.includes(
+                          curUser["First Name"] + " " + curUser["Last Name"]
+                        );
 
-                    return (
-                      <li
-                        key={meeting.Topic}
-                        className="flex justify-between items-center"
-                      >
-                        <div>
-                          <h3 className="font-bold">{meeting.Topic}</h3>
-                          <p className="text-sm text-gray-500">
-                            {formatDate(new Date(meeting.Date))}
-                          </p>
-                        </div>
-                        {isRegistered ? (
-                          <Button
-                            variant="outline"
-                            className="ml-4 bg-red-50 hover:bg-red-100 text-red-600 border-red-300"
-                            disabled={loading}
-                            onClick={() =>
-                              handleUnregister(
-                                meeting.Topic,
-                                meeting.Attendees || [],
-                                meeting.Date
-                              )
-                            }
+                        return (
+                          <li
+                            key={meeting.Topic}
+                            className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3 p-4 bg-gray-50 rounded-lg"
                           >
-                            Unregister
-                          </Button>
-                        ) : (
-                          <Button
-                            className="ml-4"
-                            disabled={loading}
-                            onClick={() =>
-                              handleSignUp(
-                                meeting.Topic,
-                                meeting.Attendees || [],
-                                meeting.Date
-                              )
-                            }
-                          >
-                            Sign Up
-                          </Button>
-                        )}
-                      </li>
-                    );
-                  })}
-                </ul>
-              ) : (
-                <p>No upcoming meetings</p>
-              )}
-            </TabsContent>
-            <TabsContent
-              value="shop"
-              className="p-4 bg-white shadow rounded-lg"
-            >
-              <h2 className="text-xl font-semibold mb-4">Shop</h2>
-              {shop.length > 0 ? (
-                <ul className="space-y-4">
-                  {shop.map((item) => {
-                    return (
-                      <li
-                        key={item.Name}
-                        className="flex justify-between items-center"
-                      >
-                        <div>
-                          <h3 className="font-bold">{item.Name}</h3>
-                        </div>
-                        {item.Price} Pelicoin
-                        <Button
-                          className="ml-4"
-                          disabled={loading}
-                          onClick={() => handlePurchase(item)}
+                            <div>
+                              <h3 className="font-bold text-sm sm:text-base">
+                                {meeting.Topic}
+                              </h3>
+                              <p className="text-xs sm:text-sm text-gray-500">
+                                {formatDate(new Date(meeting.Date))}
+                              </p>
+                            </div>
+                            {isRegistered ? (
+                              <Button
+                                variant="outline"
+                                className="w-full sm:w-auto bg-red-50 hover:bg-red-100 text-red-600 border-red-300"
+                                disabled={loading}
+                                onClick={() =>
+                                  handleUnregister(
+                                    meeting.Topic,
+                                    meeting.Attendees || [],
+                                    meeting.Date
+                                  )
+                                }
+                              >
+                                Unregister
+                              </Button>
+                            ) : (
+                              <Button
+                                className="w-full sm:w-auto"
+                                disabled={loading}
+                                onClick={() =>
+                                  handleSignUp(
+                                    meeting.Topic,
+                                    meeting.Attendees || [],
+                                    meeting.Date
+                                  )
+                                }
+                              >
+                                Sign Up
+                              </Button>
+                            )}
+                          </li>
+                        );
+                      })}
+                    </ul>
+                  ) : (
+                    <p>No upcoming meetings</p>
+                  )}
+                </div>
+              </TabsContent>
+              <TabsContent
+                value="shop"
+                className="absolute inset-0 p-6 bg-white shadow rounded-lg overflow-hidden flex flex-col"
+              >
+                <h2 className="text-xl font-semibold mb-4">Shop</h2>
+                <div className="flex-1 overflow-y-auto">
+                  {shop.length > 0 ? (
+                    <ul className="space-y-4">
+                      {shop.map((item) => (
+                        <li
+                          key={item.Name}
+                          className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3 p-4 bg-gray-50 rounded-lg"
                         >
-                          Purchase
-                        </Button>
-                      </li>
-                    );
-                  })}
-                </ul>
-              ) : (
-                <p>No upcoming meetings</p>
-              )}
-            </TabsContent>
+                          <div>
+                            <h3 className="font-bold text-sm sm:text-base">
+                              {item.Name}
+                            </h3>
+                            <p className="text-sm text-gray-600">
+                              {item.Price} Pelicoin
+                            </p>
+                          </div>
+                          <Button
+                            className="w-full sm:w-auto"
+                            disabled={loading}
+                            onClick={() => handlePurchase(item)}
+                          >
+                            Purchase
+                          </Button>
+                        </li>
+                      ))}
+                    </ul>
+                  ) : (
+                    <p>No items available</p>
+                  )}
+                </div>
+              </TabsContent>
+            </div>
           </Tabs>
-          {/* Meetings */}
-          {/* <div className="p-4 bg-white shadow rounded-lg">
-            <h2 className="text-xl font-semibold mb-4">Upcoming Meetings</h2>
-            {meetings.length > 0 ? (
-              <ul className="space-y-4">
-                {meetings.map((meeting) => {
-                  const isRegistered = meeting.Attendees?.includes(
-                    curUser["First Name"] + " " + curUser["Last Name"]
-                  );
-
-                  return (
-                    <li
-                      key={meeting.Topic}
-                      className="flex justify-between items-center"
-                    >
-                      <div>
-                        <h3 className="font-bold">{meeting.Topic}</h3>
-                        <p className="text-sm text-gray-500">
-                          {new Date(meeting.Date).toLocaleString()}
-                        </p>
-                      </div>
-                      {isRegistered ? (
-                        <Button
-                          variant="outline"
-                          className="ml-4 bg-red-50 hover:bg-red-100 text-red-600 border-red-300"
-                          disabled={loading}
-                          onClick={() =>
-                            handleUnregister(
-                              meeting.Topic,
-                              meeting.Attendees || []
-                            )
-                          }
-                        >
-                          Unregister
-                        </Button>
-                      ) : (
-                        <Button
-                          className="ml-4"
-                          disabled={loading}
-                          onClick={() =>
-                            handleSignUp(meeting.Topic, meeting.Attendees || [])
-                          }
-                        >
-                          Sign Up
-                        </Button>
-                      )}
-                    </li>
-                  );
-                })}
-              </ul>
-            ) : (
-              <p>No upcoming meetings</p>
-            )}
-          </div> */}
         </div>
 
         {/* Ticket Status */}
-        <div className="mt-6 p-4 bg-white shadow rounded-lg">
-          <h2 className="text-xl font-semibold">Ticket Status</h2>
-          <img
-            alt="ticket"
-            src={
-              curUser["Celebration Ticket"] == 1
-                ? "/ticket.png"
-                : "/tickete.png"
-            }
-            style={{
-              marginLeft: "auto",
-              marginRight: "auto",
-              width: "100px",
-            }}
-          />
-          <div style={{ padding: "10px", textAlign: "center" }}>
-            {curUser["Celebration Ticket"] == 1 ? (
-              <>Hooray! You have a ticket for the End-of-Year Celebration! </>
-            ) : (
-              <>
-                Unfortunately, you do not have a ticket for the End-of-Year
-                celebration :&#x2768;. Please contact Dr. Fisher to purchase.{" "}
-              </>
-            )}
+        <div className="mt-8 p-6 bg-white shadow rounded-lg">
+          <h2 className="text-xl font-semibold text-center">Ticket Status</h2>
+          <div className="flex flex-col items-center gap-4 mt-6">
+            <img
+              alt="ticket"
+              src={
+                curUser["Celebration Ticket"] == 1
+                  ? "/ticket.png"
+                  : "/tickete.png"
+              }
+              className="w-24 h-auto"
+            />
+            <p className="text-center text-sm sm:text-base">
+              {curUser["Celebration Ticket"] == 1 ? (
+                <>Hooray! You have a ticket for the End-of-Year Celebration!</>
+              ) : (
+                <>
+                  Unfortunately, you do not have a ticket for the End-of-Year
+                  celebration :(. Please contact Dr. Fisher to purchase.
+                </>
+              )}
+            </p>
           </div>
         </div>
       </div>
