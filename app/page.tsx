@@ -59,22 +59,30 @@ export default function Home() {
     // Get viewport dimensions
     const screenWidth = window.innerWidth;
     const screenHeight = window.innerHeight;
-    const waveHeight = screenHeight * 0.35; // The wave takes up 35% of the screen
-    const waveTop = screenHeight - waveHeight; // Y-position where the wave starts
+    const waveHeight = screenHeight * 0.35;
+    const waveTop = screenHeight - waveHeight;
 
     // Function to create a new coin
     const createCoin = () => {
       const now = Date.now();
-      // Only create a new coin if enough time has passed (150-300ms)
-      if (now - lastCoinTimeRef.current > Math.random() * 400 + 300) {
+      // Adjust coin creation frequency for mobile
+      const isMobile = window.innerWidth < 768;
+      const minDelay = isMobile ? 500 : 300;
+      const maxDelay = isMobile ? 800 : 400;
+
+      if (
+        now - lastCoinTimeRef.current >
+        Math.random() * (maxDelay - minDelay) + minDelay
+      ) {
         lastCoinTimeRef.current = now;
 
         const newCoin: Coin = {
           id: Math.random().toString(),
-          x: Math.random() * screenWidth, // Random horizontal position
-          y: -50, // Start above viewport
-          velocity: 1 + Math.random() * 2, // Random initial velocity
-          size: 45 + Math.random() * 15, // Random size between 30-60px
+          x: Math.random() * screenWidth,
+          y: -50,
+          velocity: 1 + Math.random() * 2,
+          // Adjust coin size for mobile
+          size: isMobile ? 30 + Math.random() * 10 : 45 + Math.random() * 15,
         };
 
         setCoins((prevCoins) => [...prevCoins, newCoin]);
@@ -132,7 +140,7 @@ export default function Home() {
   };
 
   return (
-    <div className="items-center justify-items-center min-h-screen sm:p-20 font-[family-name:var(--font-geist-sans)] relative overflow-hidden">
+    <div className="flex flex-col items-center min-h-screen p-4 sm:p-20 font-[family-name:var(--font-geist-sans)] relative overflow-hidden">
       <Toaster />
 
       {/* Render all falling coins */}
@@ -156,39 +164,42 @@ export default function Home() {
         </div>
       ))}
 
-      <div className="text-center text-5xl font-bold mt-[20%] relative">
-        Pelicoin banking, <br /> made easy
-      </div>
-      <div className="flex justify-center mt-[30px]">
-        {/* Microsoft Sign In Button with Always-Visible Rainbow Border */}
-        <div className="microsoft-btn-container">
-          <Button
-            onClick={handleMicrosoftSignIn}
-            disabled={loading}
-            className="microsoft-signin-btn flex items-center gap-2"
-          >
-            {loading ? (
-              "Signing in..."
-            ) : (
-              <>
-                <svg
-                  xmlns="http://www.w3.org/2000/svg"
-                  width="16"
-                  height="16"
-                  viewBox="0 0 23 23"
-                >
-                  <path fill="#f1511b" d="M1 1h10v10H1z" />
-                  <path fill="#80cc28" d="M12 1h10v10H12z" />
-                  <path fill="#00adef" d="M1 12h10v10H1z" />
-                  <path fill="#fbbc09" d="M12 12h10v10H12z" />
-                </svg>
-                Sign in with your Loomis account
-              </>
-            )}
-          </Button>
+      <div className="absolute top-[35%] left-1/2 transform -translate-x-1/2 w-full px-4">
+        <div className="text-center text-3xl sm:text-5xl font-bold">
+          Pelicoin banking, <br /> made easy
         </div>
+        <div className="flex justify-center mt-6 sm:mt-8 w-full">
+          <div className="microsoft-btn-container w-full sm:w-auto">
+            <Button
+              onClick={handleMicrosoftSignIn}
+              disabled={loading}
+              className="microsoft-signin-btn flex items-center gap-2 w-full sm:w-auto py-6 sm:py-2"
+            >
+              {loading ? (
+                "Signing in..."
+              ) : (
+                <>
+                  <svg
+                    xmlns="http://www.w3.org/2000/svg"
+                    width="16"
+                    height="16"
+                    viewBox="0 0 23 23"
+                  >
+                    <path fill="#f1511b" d="M1 1h10v10H1z" />
+                    <path fill="#80cc28" d="M12 1h10v10H12z" />
+                    <path fill="#00adef" d="M1 12h10v10H1z" />
+                    <path fill="#fbbc09" d="M12 12h10v10H12z" />
+                  </svg>
+                  Sign in with your Loomis account
+                </>
+              )}
+            </Button>
+          </div>
+        </div>
+        {message && (
+          <p className="text-center text-red-500 mt-4 px-4">{message}</p>
+        )}
       </div>
-      {message && <p className="text-center text-red-500 mt-4">{message}</p>}
       <Wave
         fill="black"
         paused={false}
@@ -200,8 +211,8 @@ export default function Home() {
           height: "35%",
         }}
         options={{
-          height: 70,
-          amplitude: 40,
+          height: window.innerWidth < 768 ? 50 : 70,
+          amplitude: window.innerWidth < 768 ? 30 : 40,
           speed: 0.25,
           points: 4,
         }}
@@ -217,24 +228,37 @@ export default function Home() {
           background: linear-gradient(
             90deg,
             rgb(255, 0, 255),
-            /* Bright magenta */ rgb(255, 0, 0),
-            /* Bright red */ rgb(255, 255, 0),
-            /* Bright yellow */ rgb(0, 255, 0),
-            /* Bright green */ rgb(0, 255, 255),
-            /* Bright cyan */ rgb(0, 0, 255),
-            /* Bright blue */ rgb(255, 0, 255) /* Bright magenta again */
+            rgb(255, 0, 0),
+            rgb(255, 255, 0),
+            rgb(0, 255, 0),
+            rgb(0, 255, 255),
+            rgb(0, 0, 255),
+            rgb(255, 0, 255)
           );
           background-size: 200% 200%;
           animation: rainbow-move 3s linear infinite;
+          width: 100%;
         }
 
-        /* Make sure the button itself preserves its styling */
         .microsoft-signin-btn {
           background-color: white;
           color: black;
+          width: 100%;
+          font-size: 1rem;
+          padding: 0.75rem 1.5rem;
         }
 
-        /* Dark mode support */
+        @media (min-width: 768px) {
+          .microsoft-btn-container {
+            width: auto;
+          }
+          .microsoft-signin-btn {
+            width: auto;
+            font-size: 0.875rem;
+            padding: 0.5rem 1rem;
+          }
+        }
+
         @media (prefers-color-scheme: dark) {
           .microsoft-signin-btn {
             background-color: #1e293b;
