@@ -206,14 +206,11 @@ const Home: React.FC = () => {
     try {
       const { data: user } = await supabase.auth.getUser();
 
-      console.log(user);
-
       if (!user?.user?.email) {
         return;
       }
 
       const { data, error } = await supabase.from("Pelicoin balances").select();
-      console.log(data);
 
       if (error) {
         throw error;
@@ -222,8 +219,6 @@ const Home: React.FC = () => {
       if (data && data.length > 0) {
         let userData = null;
         data.forEach((u) => {
-          console.log(u);
-          console.log(user);
           if (
             u["SIS Login ID"] &&
             user.user["user_metadata"]["preferred_username"]
@@ -352,7 +347,6 @@ const Home: React.FC = () => {
     const { error } = await supabase.from("Notifications").insert([notif]);
   };
   const handlePurchase = async (item: any) => {
-    console.log(curUser["Cash"], item.Price);
     if (curUser["Cash"] > item.Price) {
       addNotification(
         "Purchases",
