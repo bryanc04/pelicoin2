@@ -894,7 +894,7 @@ const Home: React.FC = () => {
             </div>
           </div>
 
-          <div className="min-h-[400px] md:h-full">
+          <div className="min-h-[30vh] md:h-full">
             <Tabs
               defaultValue="meetings"
               className="w-full h-full flex flex-col"
