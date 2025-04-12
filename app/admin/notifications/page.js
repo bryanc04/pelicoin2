@@ -116,6 +116,60 @@ export default function UpcomingMeetings() {
     });
   };
 
+  const handleApproveTransfer = async (notification) => {
+    try {
+      // Extract transfer details from notification content
+      const content = notification.Content;
+      const match = content.match(/transfer (\d+) Pelicoin from (.*) to (.*)/);
+      if (!match) {
+        toast.error("Invalid transfer request format");
+        return;
+      }
+
+      const [_, amount, source, destination] = match;
+      const studentName = content.split(" requested")[0];
+
+      // Get student's current balances
+      const { data: studentData, error: fetchError } = await supabase
+        .from("Pelicoin balances")
+        .select()
+        .ilike("Student", `%${studentName}%`);
+
+      if (fetchError || !studentData || studentData.length === 0) {
+        throw new Error("Student not found");
+      }
+
+      const student = studentData[0];
+      const currentSourceBalance = student[source];
+      const currentDestBalance = student[destination];
+
+      if (currentSourceBalance < parseFloat(amount)) {
+        toast.error("Insufficient funds in source account");
+        return;
+      }
+
+      // Update balances
+      const { error: updateError } = await supabase
+        .from("Pelicoin balances")
+        .update({
+          [source]: currentSourceBalance - parseFloat(amount),
+          [destination]: currentDestBalance + parseFloat(amount),
+        })
+        .eq("id", student.id);
+
+      if (updateError) throw updateError;
+
+      // Delete the notification
+      await supabase.from("Notifications").delete().eq("id", notification.id);
+
+      toast.success("Transfer approved successfully!");
+      fetchData();
+    } catch (error) {
+      console.error("Error approving transfer:", error);
+      toast.error("Failed to approve transfer");
+    }
+  };
+
   return (
     <div className="">
       <SidebarProvider>
@@ -143,7 +197,7 @@ export default function UpcomingMeetings() {
                   </span>
                 </div>
               ) : data.length > 0 ? (
-                <Accordion type="triple" collapsible>
+                <Accordion type="quadruple" collapsible>
                   <AccordionItem value="item-1">
                     <AccordionTrigger>Student Purchases</AccordionTrigger>
                     <AccordionContent>
@@ -216,6 +270,42 @@ export default function UpcomingMeetings() {
                                 <TableCell>{formatDate(row.Time)}</TableCell>
 
                                 <TableCell>
+                                  <Button
+                                    variant="ghost"
+                                    size="icon"
+                                    onClick={() => handleDeleteMeeting(row.id)}
+                                    className="text-red-500 hover:text-red-700"
+                                  >
+                                    <Trash2 className="h-5 w-5" />
+                                  </Button>
+                                </TableCell>
+                              </TableRow>
+                            ) : (
+                              <></>
+                            )
+                          )}
+                        </TableBody>
+                      </Table>
+                    </AccordionContent>
+                  </AccordionItem>
+                  <AccordionItem value="item-4">
+                    <AccordionTrigger>Transfer Requests</AccordionTrigger>
+                    <AccordionContent>
+                      <Table>
+                        <TableBody>
+                          {data.map((row) =>
+                            row.Category == "Transfer Requests" ? (
+                              <TableRow key={row.id || Math.random() * 10}>
+                                <TableCell>{row.Content}</TableCell>
+                                <TableCell>{formatDate(row.Time)}</TableCell>
+                                <TableCell>
+                                  <Button
+                                    variant="outline"
+                                    onClick={() => handleApproveTransfer(row)}
+                                    className="mr-2"
+                                  >
+                                    Approve
+                                  </Button>
                                   <Button
                                     variant="ghost"
                                     size="icon"

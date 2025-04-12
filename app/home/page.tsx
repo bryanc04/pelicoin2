@@ -9,6 +9,7 @@ import {
   DialogHeader,
   DialogTitle,
   DialogTrigger,
+  DialogFooter,
 } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import supabase from "../supabaseClient"; // Ensure this points to your Supabase setup
@@ -24,6 +25,8 @@ import {
 } from "@/components/ui/table";
 import { useRouter } from "next/navigation";
 import { toast, Toaster } from "react-hot-toast";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
 
 ChartJS.register(ArcElement, Tooltip, Legend);
 
@@ -36,6 +39,14 @@ interface Meeting {
 interface ShopItem {
   Name: string;
   Price: number;
+  requires_custom_input: boolean;
+  custom_input_description?: string;
+}
+
+interface TransferRequest {
+  source: string;
+  destination: string;
+  amount: number;
 }
 
 const Home: React.FC = () => {
@@ -44,6 +55,10 @@ const Home: React.FC = () => {
   const [meetings, setMeetings] = useState<Meeting[]>([]);
   const [shop, setShop] = useState<ShopItem[]>([]);
   const [isMobile, setIsMobile] = useState(false);
+  const [selectedItem, setSelectedItem] = useState<ShopItem | null>(null);
+  const [showPurchaseDialog, setShowPurchaseDialog] = useState(false);
+  const [showCustomInputDialog, setShowCustomInputDialog] = useState(false);
+  const [customInput, setCustomInput] = useState("");
 
   const [loading, setLoading] = useState(false);
   const [isAuthenticated, setIsAuthenticated] = useState(false);
@@ -54,6 +69,13 @@ const Home: React.FC = () => {
     message: string;
     image?: string;
   }>({ title: "", message: "" });
+
+  const [transferRequest, setTransferRequest] = useState<TransferRequest>({
+    source: "Cash",
+    destination: "Cash",
+    amount: 0,
+  });
+  const [showTransferDialog, setShowTransferDialog] = useState(false);
 
   // Add mobile detection
   useEffect(() => {
@@ -251,6 +273,13 @@ const Home: React.FC = () => {
   ) => {
     setLoading(true);
 
+    // Check if meeting is full
+    if (attendees.length >= 15) {
+      toast.error("This meeting is full!");
+      setLoading(false);
+      return;
+    }
+
     if (
       attendees.includes(curUser["First Name"] + " " + curUser["Last Name"])
     ) {
@@ -271,15 +300,15 @@ const Home: React.FC = () => {
 
     if (!error) {
       fetchMeetings();
-
-      toast.success("Sign Up Succesful!");
+      toast.success("Sign Up Successful!");
       addNotification(
         "Sign Ups",
         `${curUser["First Name"]} ${
           curUser["Last Name"]
         } signed up for ${meetingTopic} on ${formatDate(meetingdate)}`,
         new Date(),
-        Math.floor(Math.random() * 1000000000000000)
+        Math.floor(Math.random() * 1000000000000000),
+        true
       );
     } else {
       alert("Failed to sign up.");
@@ -322,7 +351,8 @@ const Home: React.FC = () => {
           curUser["Last Name"]
         } unregistered up from ${meetingTopic} on ${formatDate(meetingdate)}`,
         new Date(),
-        Math.floor(Math.random() * 1000000000000000)
+        Math.floor(Math.random() * 1000000000000000),
+        true
       );
     } else {
       alert("Failed to unregister from meeting.");
@@ -335,41 +365,79 @@ const Home: React.FC = () => {
     category: any,
     content: any,
     time: any,
-    id: any
+    id: any,
+    approved: any
   ) => {
     const notif = {
       Category: category,
       Content: content,
       Time: time,
       id: id,
+      Approved: approved,
     };
 
     const { error } = await supabase.from("Notifications").insert([notif]);
   };
-  const handlePurchase = async (item: any) => {
-    if (curUser["Cash"] > item.Price) {
-      addNotification(
+  const handlePurchase = async (item: ShopItem) => {
+    setSelectedItem(item);
+    if (item.requires_custom_input) {
+      setShowCustomInputDialog(true);
+    } else {
+      setShowPurchaseDialog(true);
+    }
+  };
+
+  const handleCustomInputSubmit = () => {
+    if (!customInput.trim()) {
+      toast.error("Please provide the required input");
+      return;
+    }
+    setShowCustomInputDialog(false);
+    setShowPurchaseDialog(true);
+  };
+
+  const confirmPurchase = async () => {
+    if (!selectedItem || !curUser) return;
+
+    const newBalance = curUser.Cash - selectedItem.Price;
+    if (newBalance < 0) {
+      toast.error("Insufficient funds");
+      return;
+    }
+
+    try {
+      const { error } = await supabase
+        .from("Pelicoin balances")
+        .update({ Cash: newBalance })
+        .eq("SIS Login ID", curUser["SIS Login ID"]);
+
+      if (error) throw error;
+
+      // Add notification instead of purchase history
+      const notificationContent = `${curUser["First Name"]} ${
+        curUser["Last Name"]
+      } purchased ${selectedItem.Name} for ${selectedItem.Price} Pelicoin${
+        selectedItem.requires_custom_input ? ` (${customInput})` : ""
+      }`;
+
+      await addNotification(
         "Purchases",
-        curUser["First Name"] +
-          " " +
-          curUser["Last Name"] +
-          " purchased " +
-          item.Name,
+        notificationContent,
         new Date(),
-        Math.floor(Math.random() * 1000000000000000)
+        Math.floor(Math.random() * 1000000000000000),
+        true
       );
 
-      toast.success(
-        "Thank you for buying " +
-          item.Name +
-          "! Please come find Dr. Fisher in Brush."
-      );
-    } else {
-      toast.error(
-        `You do not have enough cash (extra ${
-          item.Price - curUser["Cash"]
-        } Pelicoin required)`
-      );
+      toast.success("Purchase successful!");
+      setCurUser({ ...curUser, Cash: newBalance });
+      buildPieChartData({ ...curUser, Cash: newBalance });
+    } catch (error) {
+      console.error("Purchase error:", error);
+      toast.error("Failed to complete purchase");
+    } finally {
+      setShowPurchaseDialog(false);
+      setSelectedItem(null);
+      setCustomInput("");
     }
   };
 
@@ -383,6 +451,35 @@ const Home: React.FC = () => {
     } catch (error) {
       console.error("Error signing out:", error);
       alert("Failed to sign out. Please try again.");
+    }
+  };
+
+  const handleTransfer = async () => {
+    if (!transferRequest.amount || transferRequest.amount <= 0) {
+      toast.error("Please enter a valid amount");
+      return;
+    }
+
+    if (transferRequest.source === transferRequest.destination) {
+      toast.error("Source and destination cannot be the same");
+      return;
+    }
+
+    try {
+      await addNotification(
+        "Transfer Requests",
+        `${curUser["First Name"]} ${curUser["Last Name"]} requested to transfer ${transferRequest.amount} Pelicoin from ${transferRequest.source} to ${transferRequest.destination}`,
+        new Date(),
+        Math.floor(Math.random() * 1000000000000000),
+        false
+      );
+
+      toast.success("Transfer request submitted!");
+      setShowTransferDialog(false);
+      setTransferRequest({ source: "Cash", destination: "Cash", amount: 0 });
+    } catch (error) {
+      console.error("Transfer request error:", error);
+      toast.error("Failed to submit transfer request");
     }
   };
 
@@ -893,9 +990,10 @@ const Home: React.FC = () => {
               defaultValue="meetings"
               className="w-full h-full flex flex-col"
             >
-              <TabsList className="grid w-full grid-cols-2">
+              <TabsList className="grid w-full grid-cols-3">
                 <TabsTrigger value="meetings">Meetings</TabsTrigger>
                 <TabsTrigger value="shop">Shop</TabsTrigger>
+                <TabsTrigger value="transfers">Transfers</TabsTrigger>
               </TabsList>
               <div className="relative flex-1">
                 <TabsContent
@@ -918,6 +1016,7 @@ const Home: React.FC = () => {
                           const isRegistered = meeting.Attendees?.includes(
                             curUser["First Name"] + " " + curUser["Last Name"]
                           );
+                          const isFull = (meeting.Attendees?.length || 0) >= 15;
 
                           return (
                             <li
@@ -930,6 +1029,10 @@ const Home: React.FC = () => {
                                 </h3>
                                 <p className="text-xs sm:text-sm text-gray-500">
                                   {formatDate(new Date(meeting.Date))}
+                                </p>
+                                <p className="text-xs text-gray-500 mt-1">
+                                  {meeting.Attendees?.length || 0}/15 spots
+                                  filled
                                 </p>
                               </div>
                               {isRegistered ? (
@@ -950,7 +1053,7 @@ const Home: React.FC = () => {
                               ) : (
                                 <Button
                                   className="w-full sm:w-auto"
-                                  disabled={loading}
+                                  disabled={loading || isFull}
                                   onClick={() =>
                                     handleSignUp(
                                       meeting.Topic,
@@ -959,7 +1062,7 @@ const Home: React.FC = () => {
                                     )
                                   }
                                 >
-                                  Sign Up
+                                  {isFull ? "Full" : "Sign Up"}
                                 </Button>
                               )}
                             </li>
@@ -1007,6 +1110,17 @@ const Home: React.FC = () => {
                     )}
                   </div>
                 </TabsContent>
+                <TabsContent
+                  value="transfers"
+                  className="absolute inset-0 p-6 bg-white shadow rounded-lg overflow-hidden flex flex-col"
+                >
+                  <h2 className="text-xl font-semibold mb-4">Transfers</h2>
+                  <div className="flex-1 overflow-y-auto min-h-0">
+                    <Button onClick={() => setShowTransferDialog(true)}>
+                      New Transfer
+                    </Button>
+                  </div>
+                </TabsContent>
               </div>
             </Tabs>
           </div>
@@ -1037,6 +1151,134 @@ const Home: React.FC = () => {
             </p>
           </div>
         </div>
+
+        {/* Custom Input Dialog */}
+        <Dialog
+          open={showCustomInputDialog}
+          onOpenChange={setShowCustomInputDialog}
+        >
+          <DialogContent>
+            <DialogHeader>
+              <DialogTitle>Custom Input Required</DialogTitle>
+            </DialogHeader>
+            <div className="py-4">
+              <p className="mb-4">{selectedItem?.custom_input_description}</p>
+              <Input
+                value={customInput}
+                onChange={(e) => setCustomInput(e.target.value)}
+                placeholder="Enter your input here"
+              />
+            </div>
+            <DialogFooter>
+              <Button
+                variant="outline"
+                onClick={() => setShowCustomInputDialog(false)}
+              >
+                Cancel
+              </Button>
+              <Button onClick={handleCustomInputSubmit}>Continue</Button>
+            </DialogFooter>
+          </DialogContent>
+        </Dialog>
+
+        {/* Purchase Confirmation Dialog */}
+        <Dialog open={showPurchaseDialog} onOpenChange={setShowPurchaseDialog}>
+          <DialogContent>
+            <DialogHeader>
+              <DialogTitle>Confirm Purchase</DialogTitle>
+            </DialogHeader>
+            <div className="py-4">
+              <p>Item: {selectedItem?.Name}</p>
+              <p>Price: {selectedItem?.Price} Pelicoin</p>
+              {selectedItem?.requires_custom_input && (
+                <p>Your input: {customInput}</p>
+              )}
+            </div>
+            <DialogFooter>
+              <Button
+                variant="outline"
+                onClick={() => setShowPurchaseDialog(false)}
+              >
+                Cancel
+              </Button>
+              <Button onClick={confirmPurchase}>Confirm</Button>
+            </DialogFooter>
+          </DialogContent>
+        </Dialog>
+
+        {/* Transfer Dialog */}
+        <Dialog open={showTransferDialog} onOpenChange={setShowTransferDialog}>
+          <DialogContent>
+            <DialogHeader>
+              <DialogTitle>New Transfer Request</DialogTitle>
+            </DialogHeader>
+            <div className="py-4 space-y-4">
+              <div>
+                <Label>Amount</Label>
+                <Input
+                  type="number"
+                  value={transferRequest.amount}
+                  onChange={(e) =>
+                    setTransferRequest({
+                      ...transferRequest,
+                      amount: parseFloat(e.target.value),
+                    })
+                  }
+                  placeholder="Enter amount"
+                />
+              </div>
+              <div>
+                <Label>Source</Label>
+                <select
+                  className="w-full p-2 border rounded-md"
+                  value={transferRequest.source}
+                  onChange={(e) =>
+                    setTransferRequest({
+                      ...transferRequest,
+                      source: e.target.value,
+                    })
+                  }
+                >
+                  <option value="Cash">Cash</option>
+                  <option value="Stocks">Stocks</option>
+                  <option value="Bonds">Bonds</option>
+                </select>
+              </div>
+              <div>
+                <Label>Destination</Label>
+                <select
+                  className="w-full p-2 border rounded-md"
+                  value={transferRequest.destination}
+                  onChange={(e) =>
+                    setTransferRequest({
+                      ...transferRequest,
+                      destination: e.target.value,
+                    })
+                  }
+                >
+                  <option value="Cash">Cash</option>
+                  <option value="Stocks">Stocks</option>
+                  <option value="Bonds">Bonds</option>
+                  <option value="Stocks +1">Stocks +1</option>
+                  <option value="Bonds +1">Bonds +1</option>
+                  <option value="Stocks +2">Stocks +2</option>
+                  <option value="Bonds +2">Bonds +2</option>
+                  <option value="Stocks +3">Stocks +3</option>
+                  <option value="Bonds +3">Bonds +3</option>
+                </select>
+              </div>
+            </div>
+            <DialogFooter>
+              <Button
+                variant="outline"
+                onClick={() => setShowTransferDialog(false)}
+              >
+                Cancel
+              </Button>
+              <Button onClick={handleTransfer}>Submit Request</Button>
+            </DialogFooter>
+          </DialogContent>
+        </Dialog>
       </div>
     </div>
   );

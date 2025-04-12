@@ -28,12 +28,17 @@ import { SidebarProvider, SidebarTrigger } from "@/components/ui/sidebar";
 import { AppSidebar } from "@/components/ui/app-sidebar";
 import emailjs from "@emailjs/browser";
 import { toast, Toaster } from "react-hot-toast";
+import { Checkbox } from "@/components/ui/checkbox";
+import { Label } from "@/components/ui/label";
 
 export default function UpcomingMeetings() {
   const [data, setData] = React.useState([]);
   const [loading, setLoading] = React.useState(true);
   const [newItemName, setNewItemName] = React.useState("");
   const [newItemPrice, setNewItemPrice] = React.useState();
+  const [requiresCustomInput, setRequiresCustomInput] = React.useState(false);
+  const [customInputDescription, setCustomInputDescription] =
+    React.useState("");
 
   useEffect(() => emailjs.init("D6aKMxno3vr0IgN3e"), []);
 
@@ -80,9 +85,16 @@ export default function UpcomingMeetings() {
       return;
     }
 
+    if (requiresCustomInput && !customInputDescription) {
+      toast.error("Please provide a description for the custom input");
+      return;
+    }
+
     const newItem = {
       Name: newItemName,
       Price: newItemPrice,
+      requires_custom_input: requiresCustomInput,
+      custom_input_description: customInputDescription,
     };
 
     const { error } = await supabase.from("Shop").insert([newItem]);
@@ -95,6 +107,8 @@ export default function UpcomingMeetings() {
       handleSubmit();
       setNewItemName("");
       setNewItemPrice(undefined);
+      setRequiresCustomInput(false);
+      setCustomInputDescription("");
       fetchData();
     }
   };
@@ -146,6 +160,7 @@ export default function UpcomingMeetings() {
                     <TableRow>
                       <TableHead>Topic</TableHead>
                       <TableHead>Price (Pelicoin)</TableHead>
+                      <TableHead>Custom Input Required</TableHead>
                       <TableHead>Actions</TableHead>
                     </TableRow>
                   </TableHeader>
@@ -154,7 +169,9 @@ export default function UpcomingMeetings() {
                       <TableRow key={row.id || Math.random() * 10}>
                         <TableCell>{row.Name}</TableCell>
                         <TableCell>{row.Price}</TableCell>
-
+                        <TableCell>
+                          {row.requires_custom_input ? "Yes" : "No"}
+                        </TableCell>
                         <TableCell>
                           <Button
                             variant="ghost"
@@ -187,6 +204,24 @@ export default function UpcomingMeetings() {
                 onChange={(e) => setNewItemPrice(e.target.value)}
               />
             </div>
+            <div className="flex items-center space-x-2 mt-4">
+              <Checkbox
+                id="custom-input"
+                checked={requiresCustomInput}
+                onCheckedChange={(checked) => setRequiresCustomInput(checked)}
+              />
+              <Label htmlFor="custom-input">
+                Requires custom input from student
+              </Label>
+            </div>
+            {requiresCustomInput && (
+              <Input
+                placeholder="Describe what input the student should provide"
+                value={customInputDescription}
+                onChange={(e) => setCustomInputDescription(e.target.value)}
+                className="mt-4"
+              />
+            )}
             <Button onClick={handleAddMeeting} className="mt-4">
               Add Item
             </Button>
