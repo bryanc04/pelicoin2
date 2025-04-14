@@ -6,6 +6,7 @@ import Wave from "react-wavify";
 import supabase from "./supabaseClient";
 import { useRouter } from "next/navigation";
 import toast, { Toaster } from "react-hot-toast";
+import { Analytics } from "@vercel/analytics/react";
 
 // Define the coin type
 interface Coin {
@@ -184,7 +185,7 @@ export default function Home() {
   return (
     <div className="flex flex-col items-center min-h-screen p-4 sm:p-20 font-[family-name:var(--font-geist-sans)] relative overflow-hidden">
       <Toaster />
-
+      <Analytics />
       {/* Render all falling coins */}
       {coins.map((coin) => (
         <div
