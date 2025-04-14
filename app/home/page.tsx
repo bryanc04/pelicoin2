@@ -27,6 +27,7 @@ import { useRouter } from "next/navigation";
 import { toast, Toaster } from "react-hot-toast";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { Analytics } from "@vercel/analytics/react";
 
 ChartJS.register(ArcElement, Tooltip, Legend);
 
@@ -503,6 +504,8 @@ const Home: React.FC = () => {
   return (
     <div className="min-h-screen bg-gray-50 py-8 px-4 flex items-center">
       <Toaster />
+      <Analytics />
+
       <div className="max-w-4xl mx-auto w-full">
         <header className="mb-8 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
           <h1 className="text-2xl sm:text-3xl font-bold">

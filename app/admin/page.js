@@ -23,7 +23,7 @@ import {
 import { ChevronDown } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { toast, Toaster } from "react-hot-toast";
-
+import { Analytics } from "@vercel/analytics/react";
 const columnHeaders = [
   "Student",
   "Grad Year",
@@ -161,6 +161,8 @@ export default function Home() {
   return (
     <>
       <Toaster />
+      <Analytics />
+
       <SidebarProvider>
         <AppSidebar />
         <SidebarTrigger />
