@@ -77,6 +77,8 @@ const Home: React.FC = () => {
   });
   const [showTransferDialog, setShowTransferDialog] = useState(false);
 
+  const [activeTab, setActiveTab] = useState("meetings");
+
   // Add mobile detection
   useEffect(() => {
     const checkMobile = () => {
@@ -989,6 +991,7 @@ const Home: React.FC = () => {
             <Tabs
               defaultValue="meetings"
               className="w-full h-full flex flex-col"
+              onValueChange={(value) => setActiveTab(value)}
             >
               <TabsList className="grid w-full grid-cols-3">
                 <TabsTrigger value="meetings">Meetings</TabsTrigger>
@@ -999,16 +1002,17 @@ const Home: React.FC = () => {
                 <TabsContent
                   value="meetings"
                   className="absolute inset-0 p-6 bg-white shadow rounded-lg overflow-hidden flex flex-col"
+                  style={{ zIndex: activeTab === "meetings" ? 1 : -1 }}
                 >
                   <h2
                     className="text-xl font-semibold mb-4"
-                    style={{ zIndex: "1" }}
+                    style={{ zIndex: activeTab === "meetings" ? 1 : -1 }}
                   >
                     Upcoming Meetings
                   </h2>
                   <div
                     className="flex-1 overflow-y-auto min-h-0"
-                    style={{ zIndex: "1" }}
+                    style={{ zIndex: activeTab === "meetings" ? 1 : -1 }}
                   >
                     {meetings.length > 0 ? (
                       <ul className="space-y-4">
@@ -1077,42 +1081,49 @@ const Home: React.FC = () => {
                 <TabsContent
                   value="shop"
                   className="absolute inset-0 p-6 bg-white shadow rounded-lg overflow-hidden flex flex-col"
+                  style={{ zIndex: activeTab === "shop" ? 1 : -1 }}
                 >
                   <h2 className="text-xl font-semibold mb-4">Shop</h2>
                   <div className="flex-1 overflow-y-auto min-h-0">
                     {shop.length > 0 ? (
-                      <ul className="space-y-4">
+                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                         {shop.map((item) => (
-                          <li
+                          <div
                             key={item.Name}
-                            className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3 p-4 bg-gray-50 rounded-lg"
+                            className="p-4 bg-gray-50 rounded-lg flex flex-col"
                           >
-                            <div>
-                              <h3 className="font-bold text-sm sm:text-base">
-                                {item.Name}
-                              </h3>
-                              <p className="text-sm text-gray-600">
-                                {item.Price} Pelicoin
+                            <h3 className="font-bold text-lg mb-2">
+                              {item.Name}
+                            </h3>
+                            <p className="text-gray-600 mb-4">
+                              {item.Price} Pelicoin
+                            </p>
+                            {item.requires_custom_input && (
+                              <p className="text-sm text-gray-500 mb-4">
+                                Custom input required:{" "}
+                                {item.custom_input_description}
                               </p>
-                            </div>
+                            )}
                             <Button
-                              className="w-full sm:w-auto"
-                              disabled={loading}
                               onClick={() => handlePurchase(item)}
+                              className="mt-auto"
                             >
                               Purchase
                             </Button>
-                          </li>
+                          </div>
                         ))}
-                      </ul>
+                      </div>
                     ) : (
-                      <p>No items available</p>
+                      <p className="text-muted-foreground text-center py-8">
+                        No items available in the shop.
+                      </p>
                     )}
                   </div>
                 </TabsContent>
                 <TabsContent
                   value="transfers"
                   className="absolute inset-0 p-6 bg-white shadow rounded-lg overflow-hidden flex flex-col"
+                  style={{ zIndex: activeTab === "transfers" ? 1 : -1 }}
                 >
                   <h2 className="text-xl font-semibold mb-4">Transfers</h2>
                   <div className="flex-1 overflow-y-auto min-h-0">

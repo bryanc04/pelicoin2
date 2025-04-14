@@ -295,7 +295,7 @@ export default function UpcomingMeetings() {
                         <TableBody>
                           {data.map((row) =>
                             row.Category == "Transfer Requests" ? (
-                              <TableRow key={row.id || Math.random() * 10}>
+                              <TableRow key={row.id}>
                                 <TableCell>{row.Content}</TableCell>
                                 <TableCell>{formatDate(row.Time)}</TableCell>
                                 <TableCell>
