@@ -11,6 +11,7 @@ import {
   DialogHeader,
   DialogTitle,
   DialogTrigger,
+  DialogFooter,
 } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import supabase from "../../supabaseClient";
@@ -34,6 +35,7 @@ import {
 import { Card, CardContent } from "@/components/ui/card";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
 import { ArrowLeft, ChevronDown, Search, User } from "lucide-react";
 import { toast, Toaster } from "react-hot-toast";
 import {
@@ -42,27 +44,82 @@ import {
   PopoverTrigger,
 } from "@/components/ui/popover";
 import { cn } from "@/lib/utils";
+import { Analytics } from "@vercel/analytics/react";
 
 ChartJS.register(ArcElement, Tooltip, Legend);
+
+interface Meeting {
+  Topic: string;
+  Date: string;
+  Attendees?: string[];
+}
+
+interface ShopItem {
+  Name: string;
+  Price: number;
+  requires_custom_input: boolean;
+  custom_input_description?: string;
+}
+
+interface TransferRequest {
+  source: string;
+  destination: string;
+  amount: number;
+}
 
 const AdminStudentView = () => {
   const [selectedStudent, setSelectedStudent] = useState<string | null>(null);
   const [studentData, setStudentData] = useState<any>({});
   const [piechartData, setPiechartData] = useState<any>(null);
-  const [meetings, setMeetings] = useState<any[]>([]);
+  const [meetings, setMeetings] = useState<Meeting[]>([]);
   const [students, setStudents] = useState<any[]>([]);
   const [loading, setLoading] = useState(false);
   const [searchTerm, setSearchTerm] = useState("");
   const [filteredStudents, setFilteredStudents] = useState<any[]>([]);
   const [isPopoverOpen, setIsPopoverOpen] = useState(false);
-  const [shop, setShop] = useState<any[]>([]);
-  const fetchShop = async () => {
-    const { data, error } = await supabase.from("Shop").select();
-    if (!error) setShop(data || []);
-  };
+  const [shop, setShop] = useState<ShopItem[]>([]);
+  const [selectedItem, setSelectedItem] = useState<ShopItem | null>(null);
+  const [showPurchaseDialog, setShowPurchaseDialog] = useState(false);
+  const [showCustomInputDialog, setShowCustomInputDialog] = useState(false);
+  const [customInput, setCustomInput] = useState("");
+  const [activeTab, setActiveTab] = useState("meetings");
+  const [transferRequest, setTransferRequest] = useState<TransferRequest>({
+    source: "Cash",
+    destination: "Cash",
+    amount: 0,
+  });
+  const [showTransferDialog, setShowTransferDialog] = useState(false);
+  const [isMobile, setIsMobile] = useState(false);
+
   const router = useRouter();
   const [curUser, setCurUser] = useState<any>({});
-  // Fetch all students and meetings on component mount
+
+  useEffect(() => {
+    const checkMobile = () => {
+      setIsMobile(window.innerWidth < 768);
+    };
+
+    checkMobile();
+    window.addEventListener("resize", checkMobile);
+
+    return () => window.removeEventListener("resize", checkMobile);
+  }, []);
+
+  const chartOptions = {
+    plugins: {
+      legend: {
+        position: (isMobile ? "bottom" : "right") as "bottom" | "right",
+        labels: {
+          boxWidth: 12,
+          font: {
+            size: isMobile ? 9 : 10,
+          },
+        },
+      },
+    },
+    maintainAspectRatio: false,
+  };
+
   useEffect(() => {
     const checkAuth = async () => {
       setLoading(false);
@@ -83,6 +140,7 @@ const AdminStudentView = () => {
 
     checkAuth();
   }, [router]);
+
   const formatDate = (dateStr: any) => {
     return new Date(dateStr).toLocaleString("en-US", {
       month: "long",
@@ -93,7 +151,7 @@ const AdminStudentView = () => {
       timeZone: "America/New_York",
     });
   };
-  // Filter students when search term changes
+
   useEffect(() => {
     if (searchTerm) {
       const filtered = students.filter((student) =>
@@ -112,7 +170,6 @@ const AdminStudentView = () => {
       if (error) throw error;
 
       if (data && data.length > 0) {
-        // Sort students alphabetically
         const sortedData = data.sort((a, b) =>
           a.Student.localeCompare(b.Student)
         );
@@ -136,13 +193,21 @@ const AdminStudentView = () => {
     }
   };
 
+  const fetchShop = async () => {
+    try {
+      const { data, error } = await supabase.from("Shop").select();
+      if (error) throw error;
+      setShop(data || []);
+    } catch (error) {
+      console.error("Error fetching shop items:", error);
+      toast.error("Failed to load shop items");
+    }
+  };
+
   const handleStudentSelect = (studentName: string) => {
     const student = students.find((s) => s.Student === studentName);
     if (student) {
-      // Process student data similar to the home page
       const userData = { ...student };
-
-      // Extract first and last name
       userData["First Name"] = userData["Student"].split(",")[1]?.trim() || "";
       userData["Last Name"] = userData["Student"].split(",")[0]?.trim() || "";
 
@@ -200,6 +265,116 @@ const AdminStudentView = () => {
     });
   };
 
+  const handlePurchase = async (item: ShopItem) => {
+    setSelectedItem(item);
+    if (item.requires_custom_input) {
+      setShowCustomInputDialog(true);
+    } else {
+      setShowPurchaseDialog(true);
+    }
+  };
+
+  const handleCustomInputSubmit = () => {
+    if (!customInput.trim()) {
+      toast.error("Please provide the required input");
+      return;
+    }
+    setShowCustomInputDialog(false);
+    setShowPurchaseDialog(true);
+  };
+
+  const confirmPurchase = async () => {
+    if (!selectedItem || !studentData) return;
+
+    const newBalance = studentData.Cash - selectedItem.Price;
+    if (newBalance < 0) {
+      toast.error("Insufficient funds");
+      return;
+    }
+
+    try {
+      const { error } = await supabase
+        .from("Pelicoin balances")
+        .update({ Cash: newBalance })
+        .eq("SIS Login ID", studentData["SIS Login ID"]);
+
+      if (error) throw error;
+
+      const notificationContent = `${studentData["First Name"]} ${
+        studentData["Last Name"]
+      } purchased ${selectedItem.Name} for ${selectedItem.Price} Pelicoin${
+        selectedItem.requires_custom_input ? ` (${customInput})` : ""
+      }`;
+
+      await addNotification(
+        "Purchases",
+        notificationContent,
+        new Date(),
+        Math.floor(Math.random() * 1000000000000000),
+        true
+      );
+
+      toast.success("Purchase successful!");
+      setStudentData({ ...studentData, Cash: newBalance });
+      buildPieChartData({ ...studentData, Cash: newBalance });
+    } catch (error) {
+      console.error("Purchase error:", error);
+      toast.error("Failed to complete purchase");
+    } finally {
+      setShowPurchaseDialog(false);
+      setSelectedItem(null);
+      setCustomInput("");
+    }
+  };
+
+  const addNotification = async (
+    category: any,
+    content: any,
+    time: any,
+    id: any,
+    approved: any
+  ) => {
+    const notif = {
+      Category: category,
+      Content: content,
+      Time: time,
+      id: id,
+      Approved: approved,
+    };
+
+    const { error } = await supabase.from("Notifications").insert([notif]);
+    if (error) throw error;
+  };
+
+  const handleTransfer = async () => {
+    if (!transferRequest.amount || transferRequest.amount <= 0) {
+      toast.error("Please enter a valid amount");
+      return;
+    }
+
+    if (transferRequest.source === transferRequest.destination) {
+      toast.error("Source and destination cannot be the same");
+      return;
+    }
+
+    try {
+      await addNotification(
+        "Transfer Requests",
+        `${studentData["First Name"]} ${studentData["Last Name"]} requested to transfer ${transferRequest.amount} Pelicoin from ${transferRequest.source} to ${transferRequest.destination}`,
+        new Date(),
+        Math.floor(Math.random() * 1000000000000000),
+        false
+      );
+
+      toast.success("Transfer request submitted!");
+      setShowTransferDialog(false);
+      setTransferRequest({ source: "Cash", destination: "Cash", amount: 0 });
+    } catch (error) {
+      console.error("Transfer request error:", error);
+      toast.error("Failed to submit transfer request");
+    }
+  };
+
   if (loading) {
     return (
       <div className="flex items-center justify-center min-h-screen">
@@ -215,787 +390,473 @@ const AdminStudentView = () => {
       <AppSidebar />
       <SidebarTrigger />
       <Toaster />
-      <div className="min-h-screen ">
-        <Card className="w-[80vw] h-[90vh] mt-8 mx-auto border-none shadow-none">
-          <CardContent className="p-6">
-            <div className="flex items-center justify-between mb-6 ">
-              <h1 className="text-xl font-bold">Admin Student View</h1>
-
-              {/* Student Selector Dropdown */}
-              <div className="flex items-center gap-2">
-                <Popover open={isPopoverOpen} onOpenChange={setIsPopoverOpen}>
-                  <PopoverTrigger asChild>
-                    <Button
-                      variant="outline"
-                      className={cn(
-                        "w-[250px] justify-between",
-                        !selectedStudent && "text-muted-foreground"
-                      )}
-                    >
-                      <div className="flex items-center">
-                        <User className="h-4 w-4 mr-2" />
-                        {selectedStudent || "Select a student"}
-                      </div>
-                      <ChevronDown className="h-4 w-4 opacity-50" />
-                    </Button>
-                  </PopoverTrigger>
-                  <PopoverContent className="w-[250px] p-0">
-                    <div className="p-2">
-                      <div className="flex items-center border rounded-md px-2">
-                        <Search className="h-4 w-4 opacity-50 mr-2" />
-                        <Input
-                          placeholder="Search students..."
-                          value={searchTerm}
-                          onChange={(e) => setSearchTerm(e.target.value)}
-                          className="border-0 focus-visible:ring-0 focus-visible:ring-offset-0"
-                        />
-                      </div>
-                    </div>
-                    <ScrollArea className="h-[300px]">
-                      <div className="p-2">
-                        {filteredStudents.length > 0 ? (
-                          filteredStudents.map((student) => (
-                            <Button
-                              key={student.Student}
-                              variant="ghost"
-                              onClick={() =>
-                                handleStudentSelect(student.Student)
-                              }
-                              className="w-full justify-start font-normal"
-                            >
-                              {student.Student}
-                            </Button>
-                          ))
-                        ) : (
-                          <div className="py-6 text-center text-sm text-muted-foreground">
-                            No students found
-                          </div>
-                        )}
-                      </div>
-                    </ScrollArea>
-                  </PopoverContent>
-                </Popover>
-              </div>
+      <div
+        className="min-h-screen bg-gray-50 py-8 px-4 w-[100%]"
+        style={{ background: "white" }}
+      >
+        <Analytics />
+        <div className="max-w-4xl mx-auto w-full">
+          <header className="mb-8 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
+            <div className="flex items-center gap-4">
+              <h1 className="text-2xl sm:text-3xl font-bold">Student View</h1>
             </div>
-
-            {selectedStudent ? (
-              <div style={{ position: "relative", top: "5vh" }}>
-                <header className="mb-6">
-                  <h2 className="text-lg font-medium">
-                    Viewing: {studentData["First Name"] || "Student"}'s Screen
-                  </h2>
-                </header>
-
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                  {/* Pie Chart */}
-                  <div className="p-4 bg-white shadow rounded-lg">
-                    <h2 className="text-xl font-semibold mb-4">
-                      Portfolio Breakdown
-                    </h2>
-                    {piechartData ? (
-                      <Pie
-                        options={{
-                          plugins: {
-                            legend: {
-                              position: "right",
-                            },
-                          },
-                        }}
-                        style={{
-                          width: "70%",
-                          height: "70%",
-                          marginLeft: "auto",
-                          marginRight: "auto",
-                        }}
-                        data={piechartData}
-                      />
-                    ) : (
-                      <p>No data available</p>
-                    )}
-                    <p className="text-center mt-4 font-medium mt-[-30px]">
-                      Net Worth: {curUser["Net Worth"] || 0} Pelicoin
-                    </p>
-                    <div className="flex justify-center">
-                      <div>
-                        <Dialog>
-                          <DialogTrigger asChild>
-                            <Button
-                              variant="link"
-                              className="mr-[auto] ml-[auto] text-blue-600"
-                            >
-                              View statements
-                            </Button>
-                          </DialogTrigger>
-                          <DialogContent className="sm:max-w-[70vw] overflow-y-scroll max-h-screen">
-                            <DialogHeader>
-                              <DialogTitle>Statements</DialogTitle>
-                            </DialogHeader>
-                            <Tabs defaultValue="financial" className="w-[100%]">
-                              <TabsList className="w-[100%]">
-                                <TabsTrigger
-                                  value="financial"
-                                  className="w-[100%] font-bold"
-                                >
-                                  Balance Sheet
-                                </TabsTrigger>
-                                <TabsTrigger
-                                  value="incometax"
-                                  className="w-[100%] font-bold"
-                                >
-                                  Income/Tax Statement
-                                </TabsTrigger>
-                                <TabsTrigger
-                                  value="cashflowstatement"
-                                  className="w-[100%] font-bold"
-                                >
-                                  Statement of Cash Flow
-                                </TabsTrigger>
-                              </TabsList>
-                              <TabsContent value="financial">
-                                <Table>
-                                  <TableCaption>
-                                    Your balance sheet.
-                                  </TableCaption>
-                                  <TableHeader>
-                                    <TableRow>
-                                      <TableHead className="w-[100px]">
-                                        Overall
-                                      </TableHead>
-                                      <TableHead>Specifics</TableHead>
-                                      <TableHead>Value</TableHead>
-                                      <TableHead className="text-right">
-                                        Total
-                                      </TableHead>
-                                    </TableRow>
-                                  </TableHeader>
-                                  <TableBody>
-                                    <TableRow>
-                                      <TableCell className="font-bold">
-                                        Assets
-                                      </TableCell>
-                                      <TableCell></TableCell>
-                                      <TableCell></TableCell>
-                                      <TableCell className="text-right"></TableCell>
-                                    </TableRow>
-                                    <TableRow>
-                                      <TableCell className="font-medium">
-                                        Current
-                                      </TableCell>
-                                      <TableCell></TableCell>
-                                      <TableCell></TableCell>
-                                      <TableCell className="text-right">
-                                        {(
-                                          curUser["Cash"] +
-                                          curUser["Current Stocks"] +
-                                          curUser["Current Bonds"]
-                                        ).toFixed(2) || "N/A"}
-                                      </TableCell>
-                                    </TableRow>
-                                    <TableRow>
-                                      <TableCell className="font-medium"></TableCell>
-                                      <TableCell>Cash</TableCell>
-                                      <TableCell>{curUser["Cash"]}</TableCell>
-                                      <TableCell className="text-right"></TableCell>
-                                    </TableRow>
-                                    <TableRow>
-                                      <TableCell className="font-medium"></TableCell>
-                                      <TableCell>Current Stocks</TableCell>
-                                      <TableCell>
-                                        {curUser["Current Stocks"]}
-                                      </TableCell>
-                                      <TableCell className="text-right"></TableCell>
-                                    </TableRow>
-                                    <TableRow>
-                                      <TableCell className="font-medium"></TableCell>
-                                      <TableCell>Current Bonds</TableCell>
-                                      <TableCell>
-                                        {curUser["Current Bonds"]}
-                                      </TableCell>
-                                      <TableCell className="text-right"></TableCell>
-                                    </TableRow>
-                                    <TableRow>
-                                      <TableCell className="font-medium"></TableCell>
-                                      <TableCell>SMG</TableCell>
-                                      <TableCell>{curUser["SMG"]}</TableCell>
-                                      <TableCell className="text-right"></TableCell>
-                                    </TableRow>
-                                    <TableRow>
-                                      <TableCell className="font-medium">
-                                        Year +1
-                                      </TableCell>
-                                      <TableCell></TableCell>
-                                      <TableCell></TableCell>
-                                      <TableCell className="text-right">
-                                        {(
-                                          curUser["Stocks +1"] +
-                                          curUser["Bonds +1"]
-                                        ).toFixed(2) || "N/A"}
-                                      </TableCell>
-                                    </TableRow>
-                                    <TableRow>
-                                      <TableCell className="font-medium"></TableCell>
-                                      <TableCell>Stocks +1</TableCell>
-                                      <TableCell>
-                                        {curUser["Stocks +1"]}
-                                      </TableCell>
-                                      <TableCell className="text-right"></TableCell>
-                                    </TableRow>
-                                    <TableRow>
-                                      <TableCell className="font-medium"></TableCell>
-                                      <TableCell>Bonds +1</TableCell>
-                                      <TableCell>
-                                        {curUser["Bonds +1"]}
-                                      </TableCell>
-                                      <TableCell className="text-right"></TableCell>
-                                    </TableRow>
-                                    <TableRow>
-                                      <TableCell className="font-medium">
-                                        Year +2
-                                      </TableCell>
-                                      <TableCell></TableCell>
-                                      <TableCell></TableCell>
-                                      <TableCell className="text-right">
-                                        {(
-                                          curUser["Stocks +2"] +
-                                          curUser["Bonds +2"]
-                                        ).toFixed(2) || "N/A"}
-                                      </TableCell>
-                                    </TableRow>
-                                    <TableRow>
-                                      <TableCell className="font-medium"></TableCell>
-                                      <TableCell>Stocks +2</TableCell>
-                                      <TableCell>
-                                        {curUser["Stocks +2"]}
-                                      </TableCell>
-                                      <TableCell className="text-right"></TableCell>
-                                    </TableRow>
-                                    <TableRow>
-                                      <TableCell className="font-medium"></TableCell>
-                                      <TableCell>Bonds +2</TableCell>
-                                      <TableCell>
-                                        {curUser["Bonds +2"]}
-                                      </TableCell>
-                                      <TableCell className="text-right"></TableCell>
-                                    </TableRow>
-                                    <TableRow>
-                                      <TableCell className="font-medium">
-                                        Year +3
-                                      </TableCell>
-                                      <TableCell></TableCell>
-                                      <TableCell></TableCell>
-                                      <TableCell className="text-right">
-                                        {(
-                                          curUser["Stocks +3"] +
-                                          curUser["Bonds +3"]
-                                        ).toFixed(2) || "N/A"}
-                                      </TableCell>
-                                    </TableRow>
-                                    <TableRow>
-                                      <TableCell className="font-medium"></TableCell>
-                                      <TableCell>Stocks +3</TableCell>
-                                      <TableCell>
-                                        {curUser["Stocks +3"]}
-                                      </TableCell>
-                                      <TableCell className="text-right"></TableCell>
-                                    </TableRow>
-                                    <TableRow>
-                                      <TableCell className="font-medium"></TableCell>
-                                      <TableCell>Bonds +3</TableCell>
-                                      <TableCell>
-                                        {curUser["Bonds +3"]}
-                                      </TableCell>
-                                      <TableCell className="text-right"></TableCell>
-                                    </TableRow>
-                                    <TableRow>
-                                      <TableCell className="font-bold">
-                                        -Liabilities
-                                      </TableCell>
-                                      <TableCell></TableCell>
-                                      <TableCell></TableCell>
-                                      <TableCell className="text-right">
-                                        {curUser["Loans"]}
-                                      </TableCell>
-                                    </TableRow>
-                                    <TableRow>
-                                      <TableCell className="font-bold"></TableCell>
-                                      <TableCell>Loans payable</TableCell>
-                                      <TableCell>{curUser["Loans"]}</TableCell>
-                                      <TableCell className="text-right"></TableCell>
-                                    </TableRow>
-                                    <TableRow>
-                                      <TableCell className="font-bold">
-                                        Net worth
-                                      </TableCell>
-                                      <TableCell></TableCell>
-                                      <TableCell></TableCell>
-                                      <TableCell className="text-right">
-                                        {curUser["Net Worth"]}
-                                      </TableCell>
-                                    </TableRow>
-                                  </TableBody>
-                                </Table>
-                              </TabsContent>
-                              <TabsContent value="incometax">
-                                <Table>
-                                  <TableCaption>
-                                    Your income/tax statment.
-                                  </TableCaption>
-                                  <TableHeader>
-                                    <TableRow>
-                                      <TableHead className="w-[200px]">
-                                        Name
-                                      </TableHead>
-                                      <TableHead className="text-right">
-                                        Value
-                                      </TableHead>
-                                    </TableRow>
-                                  </TableHeader>
-                                  <TableBody>
-                                    <TableRow>
-                                      <TableCell className="font-bold">
-                                        Earnings
-                                      </TableCell>
-                                      <TableCell></TableCell>
-                                    </TableRow>
-                                    <TableRow>
-                                      <TableCell className="font-medium">
-                                        Wage Income
-                                      </TableCell>
-                                      <TableCell className="text-right">
-                                        {curUser["Wage Income"]}
-                                      </TableCell>
-                                    </TableRow>
-                                    <TableRow>
-                                      <TableCell className="font-medium">
-                                        +/- Capital Gain/Loss on Current Stocks{" "}
-                                      </TableCell>
-                                      <TableCell className="text-right">
-                                        {
-                                          curUser[
-                                            "Capital Gain/Loss on Current Stocks"
-                                          ]
-                                        }
-                                      </TableCell>
-                                    </TableRow>
-                                    <TableRow>
-                                      <TableCell className="font-medium">
-                                        +/- Capital Gain/Loss on SMG{" "}
-                                      </TableCell>
-                                      <TableCell className="text-right">
-                                        {" "}
-                                        {curUser["Capital Gain/Loss in SMG"]}
-                                      </TableCell>
-                                    </TableRow>
-                                    <TableRow>
-                                      <TableCell className="font-medium">
-                                        + Interest Income on Current Bonds
-                                      </TableCell>
-                                      <TableCell className="text-right">
-                                        {
-                                          curUser[
-                                            "Interest Earned on Current Bonds"
-                                          ]
-                                        }
-                                      </TableCell>
-                                    </TableRow>
-                                    <TableRow>
-                                      <TableCell className="font-medium">
-                                        + Withdrawals from Tax Deferred Accounts
-                                      </TableCell>
-                                      <TableCell className="text-right">
-                                        {
-                                          curUser[
-                                            "Withdrawals from Tax Deferred Accounts"
-                                          ]
-                                        }
-                                      </TableCell>
-                                    </TableRow>
-                                    <TableRow>
-                                      <TableCell className="font-medium">
-                                        - Deposits to Tax Deferred Accounts
-                                      </TableCell>
-                                      <TableCell className="text-right">
-                                        {
-                                          curUser[
-                                            "Deposits to Tax Deferred Accounts"
-                                          ]
-                                        }
-                                      </TableCell>
-                                    </TableRow>
-                                    <TableRow>
-                                      <TableCell className="font-bold">
-                                        Taxable Income
-                                      </TableCell>
-                                      <TableCell className="text-right">
-                                        {curUser["Taxable Income"]}
-                                      </TableCell>
-                                    </TableRow>
-                                    <TableRow>
-                                      <TableCell className="font-medium">
-                                        - Tax
-                                      </TableCell>
-                                      <TableCell className="text-right">
-                                        {curUser["Taxes"]}
-                                      </TableCell>
-                                    </TableRow>
-                                    <TableRow>
-                                      <TableCell className="font-bold">
-                                        Net Income
-                                      </TableCell>
-                                      <TableCell className="text-right">
-                                        {curUser["Net Income"]}
-                                      </TableCell>
-                                    </TableRow>
-                                    <TableRow>
-                                      <TableCell className="font-bold"></TableCell>
-                                      <TableCell className="text-right"></TableCell>
-                                    </TableRow>
-                                    <TableRow>
-                                      <TableCell className="font-bold"></TableCell>
-                                      <TableCell className="text-right"></TableCell>
-                                    </TableRow>
-                                  </TableBody>
-                                </Table>
-                              </TabsContent>
-                              <TabsContent value="cashflowstatement">
-                                <Table>
-                                  <TableCaption>
-                                    Your Statement of Cash flow
-                                  </TableCaption>
-                                  <TableHeader>
-                                    <TableRow>
-                                      <TableHead className="w-[200px]">
-                                        Name
-                                      </TableHead>
-                                      <TableHead className="text-right">
-                                        Value
-                                      </TableHead>
-                                    </TableRow>
-                                  </TableHeader>
-                                  <TableBody>
-                                    <TableRow>
-                                      <TableCell className="font-bold">
-                                        Beginning Cash Balance
-                                      </TableCell>
-                                      <TableCell className="text-right">
-                                        {curUser["Beginning cash"]}
-                                      </TableCell>
-                                    </TableRow>
-                                    <TableRow>
-                                      <TableCell className="font-medium">
-                                        + Wage Income
-                                      </TableCell>
-                                      <TableCell className="text-right">
-                                        {curUser["Wage Income"]}
-                                      </TableCell>
-                                    </TableRow>
-                                    <TableRow>
-                                      <TableCell className="font-medium">
-                                        +/- Capital Gain/Loss in SMG
-                                      </TableCell>
-                                      <TableCell className="text-right">
-                                        {curUser["Capital Gain/Loss in SMG"]}
-                                      </TableCell>
-                                    </TableRow>
-                                    <TableRow>
-                                      <TableCell className="font-medium">
-                                        + Grants Received
-                                      </TableCell>
-                                      <TableCell className="text-right">
-                                        {" "}
-                                        {curUser["Grants Received"]}
-                                      </TableCell>
-                                    </TableRow>
-                                    <TableRow>
-                                      <TableCell className="font-medium">
-                                        + Loans Received
-                                      </TableCell>
-                                      <TableCell className="text-right">
-                                        {" "}
-                                        {curUser["Loans"]}
-                                      </TableCell>
-                                    </TableRow>
-                                    <TableRow>
-                                      <TableCell className="font-medium">
-                                        + Total Stock Sales
-                                      </TableCell>
-                                      <TableCell className="text-right">
-                                        {" "}
-                                        {curUser["Total Stock Sales"]}
-                                      </TableCell>
-                                    </TableRow>
-                                    <TableRow>
-                                      <TableCell className="font-medium">
-                                        + Total Bond Sales
-                                      </TableCell>
-                                      <TableCell className="text-right">
-                                        {" "}
-                                        {curUser["Total Bond Sales"]}
-                                      </TableCell>
-                                    </TableRow>
-                                    <TableRow>
-                                      <TableCell className="font-medium">
-                                        - Taxes
-                                      </TableCell>
-                                      <TableCell className="text-right">
-                                        {curUser["Taxes"]}
-                                      </TableCell>
-                                    </TableRow>
-                                    <TableRow>
-                                      <TableCell className="font-medium">
-                                        - Loan Payments
-                                      </TableCell>
-                                      <TableCell className="text-right">
-                                        {curUser["Loan Payments"]}
-                                      </TableCell>
-                                    </TableRow>
-                                    <TableRow>
-                                      <TableCell className="font-medium">
-                                        - Spending
-                                      </TableCell>
-                                      <TableCell className="text-right">
-                                        {curUser["Spending"]}
-                                      </TableCell>
-                                    </TableRow>
-                                    <TableRow>
-                                      <TableCell className="font-medium">
-                                        - Fees and Penalties
-                                      </TableCell>
-                                      <TableCell className="text-right">
-                                        {curUser["Fees and Penalties"]}
-                                      </TableCell>
-                                    </TableRow>
-                                    <TableRow>
-                                      <TableCell className="font-medium">
-                                        - Total Stock Purchases
-                                      </TableCell>
-                                      <TableCell className="text-right">
-                                        {curUser["Total Stock Purchases"]}
-                                      </TableCell>
-                                    </TableRow>
-                                    <TableRow>
-                                      <TableCell className="font-medium">
-                                        - Total Bond Purchases
-                                      </TableCell>
-                                      <TableCell className="text-right">
-                                        {curUser["Total Bond Purchases"]}
-                                      </TableCell>
-                                    </TableRow>
-                                    <TableRow>
-                                      <TableCell className="font-medium">
-                                        - SMG
-                                      </TableCell>
-                                      <TableCell className="text-right">
-                                        {curUser["SMG"]}
-                                      </TableCell>
-                                    </TableRow>
-                                    <TableRow>
-                                      <TableCell className="font-bold">
-                                        Ending Cash
-                                      </TableCell>
-                                      <TableCell className="text-right">
-                                        {curUser["Cash"]}
-                                      </TableCell>
-                                    </TableRow>
-                                  </TableBody>
-                                </Table>
-                              </TabsContent>
-                            </Tabs>
-                          </DialogContent>
-                        </Dialog>
+            <Popover open={isPopoverOpen} onOpenChange={setIsPopoverOpen}>
+              <PopoverTrigger asChild>
+                <Button
+                  variant="outline"
+                  className={cn(
+                    "w-[250px] justify-between",
+                    !selectedStudent && "text-muted-foreground"
+                  )}
+                >
+                  <div className="flex items-center">
+                    <User className="h-4 w-4 mr-2" />
+                    {selectedStudent || "Select a student"}
+                  </div>
+                  <ChevronDown className="h-4 w-4 opacity-50" />
+                </Button>
+              </PopoverTrigger>
+              <PopoverContent className="w-[250px] p-0">
+                <div className="p-2">
+                  <div className="flex items-center border rounded-md px-2">
+                    <Search className="h-4 w-4 opacity-50 mr-2" />
+                    <Input
+                      placeholder="Search students..."
+                      value={searchTerm}
+                      onChange={(e) => setSearchTerm(e.target.value)}
+                      className="border-0 focus-visible:ring-0 focus-visible:ring-offset-0"
+                    />
+                  </div>
+                  <ScrollArea className="h-[200px] mt-2">
+                    {filteredStudents.map((student) => (
+                      <div
+                        key={student.Student}
+                        className="p-2 hover:bg-gray-100 cursor-pointer rounded-md"
+                        onClick={() => handleStudentSelect(student.Student)}
+                      >
+                        {student.Student}
                       </div>
+                    ))}
+                  </ScrollArea>
+                </div>
+              </PopoverContent>
+            </Popover>
+          </header>
+
+          {selectedStudent ? (
+            <>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-8 md:h-[40vh] mb-4 md:mb-0">
+                {/* Pie Chart */}
+                <div className="p-6 bg-white shadow rounded-lg flex flex-col min-h-[300px] md:h-full">
+                  <h2 className="text-xl font-semibold mb-6">
+                    Portfolio Breakdown
+                  </h2>
+                  {piechartData ? (
+                    <div
+                      className={`w-full aspect-square ${
+                        isMobile ? "max-w-[250px]" : "max-w-xs"
+                      } mx-auto flex-1 flex items-center ${
+                        isMobile ? "h-[200px]" : "h-[40%]"
+                      }`}
+                    >
+                      <Pie options={chartOptions} data={piechartData} />
+                    </div>
+                  ) : (
+                    <p>No data available</p>
+                  )}
+                  <div className="mt-6">
+                    <p className="text-center font-medium">
+                      Net Worth: {studentData["Net Worth"] || 0} Pelicoin
+                    </p>
+                    <div className="flex justify-center mt-4">
+                      <Dialog>
+                        <DialogTrigger asChild>
+                          <Button variant="link" className="text-blue-600">
+                            View statements
+                          </Button>
+                        </DialogTrigger>
+                        <DialogContent className="sm:max-w-[80vw] max-h-[80vh] overflow-y-auto">
+                          <DialogHeader>
+                            <DialogTitle>Statements</DialogTitle>
+                          </DialogHeader>
+                          <Tabs defaultValue="financial" className="w-full">
+                            <TabsList className="w-full grid grid-cols-3">
+                              <TabsTrigger value="financial">
+                                Balance Sheet
+                              </TabsTrigger>
+                              <TabsTrigger value="incometax">
+                                Income/Tax
+                              </TabsTrigger>
+                              <TabsTrigger value="cashflowstatement">
+                                Cash Flow
+                              </TabsTrigger>
+                            </TabsList>
+                            <TabsContent value="financial">
+                              <Table>
+                                <TableCaption>Balance sheet.</TableCaption>
+                                <TableHeader>
+                                  <TableRow>
+                                    <TableHead className="w-[100px]">
+                                      Overall
+                                    </TableHead>
+                                    <TableHead>Specifics</TableHead>
+                                    <TableHead>Value</TableHead>
+                                    <TableHead className="text-right">
+                                      Total
+                                    </TableHead>
+                                  </TableRow>
+                                </TableHeader>
+                                <TableBody>
+                                  {/* Balance sheet content */}
+                                </TableBody>
+                              </Table>
+                            </TabsContent>
+                            <TabsContent value="incometax">
+                              <Table>
+                                <TableCaption>
+                                  Income/tax statement.
+                                </TableCaption>
+                                <TableHeader>
+                                  <TableRow>
+                                    <TableHead className="w-[200px]">
+                                      Name
+                                    </TableHead>
+                                    <TableHead className="text-right">
+                                      Value
+                                    </TableHead>
+                                  </TableRow>
+                                </TableHeader>
+                                <TableBody>
+                                  {/* Income/tax content */}
+                                </TableBody>
+                              </Table>
+                            </TabsContent>
+                            <TabsContent value="cashflowstatement">
+                              <Table>
+                                <TableCaption>
+                                  Statement of cash flow.
+                                </TableCaption>
+                                <TableHeader>
+                                  <TableRow>
+                                    <TableHead className="w-[200px]">
+                                      Name
+                                    </TableHead>
+                                    <TableHead className="text-right">
+                                      Value
+                                    </TableHead>
+                                  </TableRow>
+                                </TableHeader>
+                                <TableBody>{/* Cash flow content */}</TableBody>
+                              </Table>
+                            </TabsContent>
+                          </Tabs>
+                        </DialogContent>
+                      </Dialog>
                     </div>
                   </div>
-                  <Tabs
-                    defaultValue="meetings"
-                    style={{
-                      width: "100%",
-                      display: "grid",
-                      gridTemplateRows: "10% 90%",
-                    }}
-                  >
-                    <TabsList className="grid w-full grid-cols-2">
-                      <TabsTrigger value="meetings">Meetings</TabsTrigger>
-                      <TabsTrigger value="shop">Shop</TabsTrigger>
-                    </TabsList>
-                    <TabsContent
-                      value="meetings"
-                      className="p-4 bg-white shadow rounded-lg"
-                    >
-                      <h2 className="text-xl font-semibold mb-4">
-                        Upcoming Meetings
-                      </h2>
-                      {meetings.length > 0 ? (
-                        <ul className="space-y-4">
-                          {meetings.map((meeting) => {
-                            const isRegistered = meeting.Attendees?.includes(
-                              curUser["First Name"] + " " + curUser["Last Name"]
-                            );
-
-                            return (
-                              <li
-                                key={meeting.Topic}
-                                className="flex justify-between items-center"
-                              >
-                                <div>
-                                  <h3 className="font-bold">{meeting.Topic}</h3>
-                                  <p className="text-sm text-gray-500">
-                                    {formatDate(new Date(meeting.Date))}
-                                  </p>
-                                </div>
-                                {isRegistered ? (
-                                  <Button
-                                    variant="outline"
-                                    className="ml-4 bg-red-50 hover:bg-red-100 text-red-600 border-red-300"
-                                    disabled={loading}
-                                  >
-                                    Unregister
-                                  </Button>
-                                ) : (
-                                  <Button className="ml-4" disabled={loading}>
-                                    Sign Up
-                                  </Button>
-                                )}
-                              </li>
-                            );
-                          })}
-                        </ul>
-                      ) : (
-                        <p>No upcoming meetings</p>
-                      )}
-                    </TabsContent>
-                    <TabsContent
-                      value="shop"
-                      className="p-4 bg-white shadow rounded-lg"
-                    >
-                      <h2 className="text-xl font-semibold mb-4">Shop</h2>
-                      {shop.length > 0 ? (
-                        <ul className="space-y-4">
-                          {shop.map((item) => {
-                            return (
-                              <li
-                                key={item.Name}
-                                className="flex justify-between items-center"
-                              >
-                                <div>
-                                  <h3 className="font-bold">{item.Name}</h3>
-                                </div>
-                                {item.Price} Pelicoin
-                                <Button className="ml-4" disabled={loading}>
-                                  Purchase
-                                </Button>
-                              </li>
-                            );
-                          })}
-                        </ul>
-                      ) : (
-                        <p>No upcoming meetings</p>
-                      )}
-                    </TabsContent>
-                  </Tabs>
-                  {/* Meetings */}
-                  {/* <div className="p-4 bg-white shadow rounded-lg">
-            <h2 className="text-xl font-semibold mb-4">Upcoming Meetings</h2>
-            {meetings.length > 0 ? (
-              <ul className="space-y-4">
-                {meetings.map((meeting) => {
-                  const isRegistered = meeting.Attendees?.includes(
-                    curUser["First Name"] + " " + curUser["Last Name"]
-                  );
-
-                  return (
-                    <li
-                      key={meeting.Topic}
-                      className="flex justify-between items-center"
-                    >
-                      <div>
-                        <h3 className="font-bold">{meeting.Topic}</h3>
-                        <p className="text-sm text-gray-500">
-                          {new Date(meeting.Date).toLocaleString()}
-                        </p>
-                      </div>
-                      {isRegistered ? (
-                        <Button
-                          variant="outline"
-                          className="ml-4 bg-red-50 hover:bg-red-100 text-red-600 border-red-300"
-                          disabled={loading}
-                          onClick={() =>
-                            handleUnregister(
-                              meeting.Topic,
-                              meeting.Attendees || []
-                            )
-                          }
-                        >
-                          Unregister
-                        </Button>
-                      ) : (
-                        <Button
-                          className="ml-4"
-                          disabled={loading}
-                          onClick={() =>
-                            handleSignUp(meeting.Topic, meeting.Attendees || [])
-                          }
-                        >
-                          Sign Up
-                        </Button>
-                      )}
-                    </li>
-                  );
-                })}
-              </ul>
-            ) : (
-              <p>No upcoming meetings</p>
-            )}
-          </div> */}
                 </div>
 
-                {/* Ticket Status */}
-                <div className="mt-6 p-4 bg-white shadow rounded-lg">
-                  <h2 className="text-xl font-semibold">Ticket Status</h2>
+                <div className="min-h-[30vh] md:h-full">
+                  <Tabs
+                    defaultValue="meetings"
+                    className="w-full h-full flex flex-col"
+                    onValueChange={(value) => setActiveTab(value)}
+                  >
+                    <TabsList className="grid w-full grid-cols-3">
+                      <TabsTrigger value="meetings">Meetings</TabsTrigger>
+                      <TabsTrigger value="shop">Shop</TabsTrigger>
+                      <TabsTrigger value="transfers">Transfers</TabsTrigger>
+                    </TabsList>
+                    <div className="relative flex-1">
+                      <TabsContent
+                        value="meetings"
+                        className="absolute inset-0 p-6 bg-white shadow rounded-lg overflow-hidden flex flex-col"
+                        style={{ zIndex: activeTab === "meetings" ? 1 : -1 }}
+                      >
+                        <h2 className="text-xl font-semibold mb-4">
+                          Upcoming Meetings
+                        </h2>
+                        <div className="flex-1 overflow-y-auto min-h-0">
+                          {meetings.length > 0 ? (
+                            <ul className="space-y-4">
+                              {meetings.map((meeting) => {
+                                const isRegistered =
+                                  meeting.Attendees?.includes(
+                                    studentData["First Name"] +
+                                      " " +
+                                      studentData["Last Name"]
+                                  );
+                                const isFull =
+                                  (meeting.Attendees?.length || 0) >= 15;
+
+                                return (
+                                  <li
+                                    key={meeting.Topic}
+                                    className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3 p-4 bg-gray-50 rounded-lg"
+                                  >
+                                    <div>
+                                      <h3 className="font-bold text-sm sm:text-base">
+                                        {meeting.Topic}
+                                      </h3>
+                                      <p className="text-xs sm:text-sm text-gray-500">
+                                        {formatDate(new Date(meeting.Date))}
+                                      </p>
+                                      <p className="text-xs text-gray-500 mt-1">
+                                        {meeting.Attendees?.length || 0}/15
+                                        spots filled
+                                      </p>
+                                    </div>
+                                    <Button
+                                      variant="outline"
+                                      className="w-full sm:w-auto"
+                                      disabled={isFull}
+                                    >
+                                      {isRegistered
+                                        ? "Registered"
+                                        : isFull
+                                        ? "Full"
+                                        : "Register"}
+                                    </Button>
+                                  </li>
+                                );
+                              })}
+                            </ul>
+                          ) : (
+                            <p>No upcoming meetings</p>
+                          )}
+                        </div>
+                      </TabsContent>
+
+                      <TabsContent
+                        value="shop"
+                        className="absolute inset-0 p-6 bg-white shadow rounded-lg overflow-hidden flex flex-col"
+                        style={{ zIndex: activeTab === "shop" ? 1 : -1 }}
+                      >
+                        <h2 className="text-xl font-semibold mb-4">Shop</h2>
+                        <div className="flex-1 overflow-y-auto min-h-0">
+                          {shop.length > 0 ? (
+                            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                              {shop.map((item) => (
+                                <div
+                                  key={item.Name}
+                                  className="p-4 bg-gray-50 rounded-lg flex flex-col"
+                                >
+                                  <h3 className="font-bold text-lg mb-2">
+                                    {item.Name}
+                                  </h3>
+                                  <p className="text-gray-600 mb-4">
+                                    {item.Price} Pelicoin
+                                  </p>
+                                  {item.requires_custom_input && (
+                                    <p className="text-sm text-gray-500 mb-4">
+                                      Custom input required:{" "}
+                                      {item.custom_input_description}
+                                    </p>
+                                  )}
+                                  <Button
+                                    onClick={() => handlePurchase(item)}
+                                    className="mt-auto"
+                                  >
+                                    Purchase
+                                  </Button>
+                                </div>
+                              ))}
+                            </div>
+                          ) : (
+                            <p className="text-muted-foreground text-center py-8">
+                              No items available in the shop.
+                            </p>
+                          )}
+                        </div>
+                      </TabsContent>
+
+                      <TabsContent
+                        value="transfers"
+                        className="absolute inset-0 p-6 bg-white shadow rounded-lg overflow-hidden flex flex-col"
+                        style={{ zIndex: activeTab === "transfers" ? 1 : -1 }}
+                      >
+                        <h2 className="text-xl font-semibold mb-4">
+                          Transfers
+                        </h2>
+                        <div className="flex-1 overflow-y-auto min-h-0">
+                          <Button onClick={() => setShowTransferDialog(true)}>
+                            New Transfer
+                          </Button>
+                        </div>
+                      </TabsContent>
+                    </div>
+                  </Tabs>
+                </div>
+              </div>
+
+              {/* Ticket Status */}
+              <div className="mt-8 md:mt-8 p-6 bg-white shadow rounded-lg min-h-[150px] md:h-[20vh]">
+                <h2 className="text-xl font-semibold text-center">
+                  Ticket Status
+                </h2>
+                <div className="flex items-center justify-center h-full gap-4">
                   <img
                     alt="ticket"
                     src={
-                      curUser["Celebration Ticket"] == 1
+                      studentData["Celebration Ticket"] == 1
                         ? "/ticket.png"
                         : "/tickete.png"
                     }
-                    style={{
-                      marginLeft: "auto",
-                      marginRight: "auto",
-                      width: "100px",
-                    }}
+                    className="w-24 h-auto"
                   />
-                  <div style={{ padding: "10px", textAlign: "center" }}>
-                    {curUser["Celebration Ticket"] == 1 ? (
+                  <p className="text-right text-sm sm:text-base max-w-[60%]">
+                    {studentData["Celebration Ticket"] == 1 ? (
                       <>
                         Hooray! You have a ticket for the End-of-Year
-                        Celebration!{" "}
+                        Celebration!
                       </>
                     ) : (
                       <>
                         Unfortunately, you do not have a ticket for the
-                        End-of-Year celebration :&#x2768;. Please contact Dr.
-                        Fisher to purchase.{" "}
+                        End-of-Year celebration :(. Please contact Dr. Fisher to
+                        purchase.
                       </>
                     )}
-                  </div>
-                </div>
-              </div>
-            ) : (
-              <div className="flex items-center justify-center h-[60vh]">
-                <div className="text-center">
-                  <User className="h-16 w-16 mx-auto text-gray-300 mb-2" />
-                  <h3 className="text-lg font-medium mb-1">
-                    No Student Selected
-                  </h3>
-                  <p className="text-muted-foreground">
-                    Select a student from the dropdown to view their dashboard
                   </p>
                 </div>
               </div>
-            )}
-          </CardContent>
-        </Card>
+            </>
+          ) : (
+            <div className="text-center py-8">
+              <p className="text-muted-foreground">
+                Please select a student to view their dashboard.
+              </p>
+            </div>
+          )}
+        </div>
+
+        {/* Custom Input Dialog */}
+        <Dialog
+          open={showCustomInputDialog}
+          onOpenChange={setShowCustomInputDialog}
+        >
+          <DialogContent>
+            <DialogHeader>
+              <DialogTitle>Custom Input Required</DialogTitle>
+            </DialogHeader>
+            <div className="py-4">
+              <p className="mb-4">{selectedItem?.custom_input_description}</p>
+              <Input
+                value={customInput}
+                onChange={(e) => setCustomInput(e.target.value)}
+                placeholder="Enter your input here"
+              />
+            </div>
+            <DialogFooter>
+              <Button
+                variant="outline"
+                onClick={() => setShowCustomInputDialog(false)}
+              >
+                Cancel
+              </Button>
+              <Button onClick={handleCustomInputSubmit}>Continue</Button>
+            </DialogFooter>
+          </DialogContent>
+        </Dialog>
+
+        {/* Purchase Confirmation Dialog */}
+        <Dialog open={showPurchaseDialog} onOpenChange={setShowPurchaseDialog}>
+          <DialogContent>
+            <DialogHeader>
+              <DialogTitle>Confirm Purchase</DialogTitle>
+            </DialogHeader>
+            <div className="py-4">
+              <p>Item: {selectedItem?.Name}</p>
+              <p>Price: {selectedItem?.Price} Pelicoin</p>
+              {selectedItem?.requires_custom_input && (
+                <p>Your input: {customInput}</p>
+              )}
+            </div>
+            <DialogFooter>
+              <Button
+                variant="outline"
+                onClick={() => setShowPurchaseDialog(false)}
+              >
+                Cancel
+              </Button>
+              <Button onClick={confirmPurchase}>Confirm</Button>
+            </DialogFooter>
+          </DialogContent>
+        </Dialog>
+
+        {/* Transfer Dialog */}
+        <Dialog open={showTransferDialog} onOpenChange={setShowTransferDialog}>
+          <DialogContent>
+            <DialogHeader>
+              <DialogTitle>New Transfer Request</DialogTitle>
+            </DialogHeader>
+            <div className="py-4 space-y-4">
+              <div>
+                <Label>Amount</Label>
+                <Input
+                  type="number"
+                  value={transferRequest.amount}
+                  onChange={(e) =>
+                    setTransferRequest({
+                      ...transferRequest,
+                      amount: parseFloat(e.target.value),
+                    })
+                  }
+                  placeholder="Enter amount"
+                />
+              </div>
+              <div>
+                <Label>Source</Label>
+                <select
+                  className="w-full p-2 border rounded-md"
+                  value={transferRequest.source}
+                  onChange={(e) =>
+                    setTransferRequest({
+                      ...transferRequest,
+                      source: e.target.value,
+                    })
+                  }
+                >
+                  <option value="Cash">Cash</option>
+                  <option value="Stocks">Stocks</option>
+                  <option value="Bonds">Bonds</option>
+                </select>
+              </div>
+              <div>
+                <Label>Destination</Label>
+                <select
+                  className="w-full p-2 border rounded-md"
+                  value={transferRequest.destination}
+                  onChange={(e) =>
+                    setTransferRequest({
+                      ...transferRequest,
+                      destination: e.target.value,
+                    })
+                  }
+                >
+                  <option value="Cash">Cash</option>
+                  <option value="Stocks">Stocks</option>
+                  <option value="Bonds">Bonds</option>
+                  <option value="Stocks +1">Stocks +1</option>
+                  <option value="Bonds +1">Bonds +1</option>
+                  <option value="Stocks +2">Stocks +2</option>
+                  <option value="Bonds +2">Bonds +2</option>
+                  <option value="Stocks +3">Stocks +3</option>
+                  <option value="Bonds +3">Bonds +3</option>
+                </select>
+              </div>
+            </div>
+            <DialogFooter>
+              <Button
+                variant="outline"
+                onClick={() => setShowTransferDialog(false)}
+              >
+                Cancel
+              </Button>
+              <Button onClick={handleTransfer}>Submit Request</Button>
+            </DialogFooter>
+          </DialogContent>
+        </Dialog>
       </div>
     </SidebarProvider>
   );
