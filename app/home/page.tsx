@@ -816,7 +816,7 @@ const Home: React.FC = () => {
                               </TableCell>
                             </TableRow>
                             <TableRow>
-                              <TableCell className="font-bold">
+                              <TableCell className="font-medium">
                                 - Deductible Charitable Donations
                               </TableCell>
                               <TableCell className="text-right">
