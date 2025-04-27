@@ -816,6 +816,14 @@ const Home: React.FC = () => {
                               </TableCell>
                             </TableRow>
                             <TableRow>
+                              <TableCell className="font-bold">
+                                - Deductible Charitable Donations
+                              </TableCell>
+                              <TableCell className="text-right">
+                                {curUser["Deductible Charitable Donations"]}
+                              </TableCell>
+                            </TableRow>
+                            <TableRow>
                               <TableCell className="font-medium">
                                 - Tax
                               </TableCell>
@@ -938,6 +946,14 @@ const Home: React.FC = () => {
                               </TableCell>
                               <TableCell className="text-right">
                                 {curUser["Spending"]}
+                              </TableCell>
+                            </TableRow>
+                            <TableRow>
+                              <TableCell className="font-medium">
+                                - Charitable Donations
+                              </TableCell>
+                              <TableCell className="text-right">
+                                {curUser["Charitable Donations"]}
                               </TableCell>
                             </TableRow>
                             <TableRow>
