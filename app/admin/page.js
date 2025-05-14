@@ -63,6 +63,10 @@ const columnHeaders = [
   "Spending",
   "Fees and Penalties",
   "Ending Cash Balance",
+  "Deductible Charitable Donations",
+  "Charitable Donations",
+  "Transfers In",
+  "Transfers Out",
 ];
 
 export default function Home() {

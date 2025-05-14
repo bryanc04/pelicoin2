@@ -28,6 +28,6 @@
     "**/*.tsx",
     ".next/types/**/*.ts",
     "app/admin/page.js"
-  ],
+, "app/admin/manageshop/page.js"  ],
   "exclude": ["node_modules"]
 }

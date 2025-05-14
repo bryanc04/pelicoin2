@@ -707,6 +707,7 @@ const Home: React.FC = () => {
                               <TableCell>{curUser["Bonds +3"]}</TableCell>
                               <TableCell className="text-right"></TableCell>
                             </TableRow>
+
                             <TableRow>
                               <TableCell className="font-bold">
                                 -Liabilities
@@ -926,6 +927,15 @@ const Home: React.FC = () => {
                             </TableRow>
                             <TableRow>
                               <TableCell className="font-medium">
+                                + Transfers In
+                              </TableCell>
+                              <TableCell className="text-right">
+                                {" "}
+                                {curUser["Transfers In"]}
+                              </TableCell>
+                            </TableRow>
+                            <TableRow>
+                              <TableCell className="font-medium">
                                 - Taxes
                               </TableCell>
                               <TableCell className="text-right">
@@ -986,6 +996,14 @@ const Home: React.FC = () => {
                               </TableCell>
                               <TableCell className="text-right">
                                 {curUser["SMG"]}
+                              </TableCell>
+                            </TableRow>
+                            <TableRow>
+                              <TableCell className="font-medium">
+                                - Transfers Out
+                              </TableCell>
+                              <TableCell className="text-right">
+                                {curUser["Transfers Out"]}
                               </TableCell>
                             </TableRow>
                             <TableRow>
