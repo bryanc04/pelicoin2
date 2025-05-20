@@ -511,13 +511,27 @@ const Home: React.FC = () => {
           <h1 className="text-2xl sm:text-3xl font-bold">
             Hi, {curUser["First Name"] || "User"}!
           </h1>
-          <Button
-            onClick={handleSignOut}
-            variant="outline"
-            className="bg-red-50 hover:bg-red-100 text-red-600 border-red-300 w-full sm:w-auto"
-          >
-            Sign Out
-          </Button>
+          <div className="flex gap-4">
+            <Button
+              variant="outline"
+              className="bg-blue-50 hover:bg-blue-100 text-blue-600 border-blue-300 w-full sm:w-auto"
+              onClick={() =>
+                window.open(
+                  "https://loomischaffeeschool-my.sharepoint.com/:w:/g/personal/lfisher_internal_loomis_org/EZHoTEBgijVDjtOXpIY6JyABAUlpjdzcM1_Uc3C3NreYJQ?e=tOhVaJ",
+                  "_blank"
+                )
+              }
+            >
+              Pelicoin Program Rules and Information
+            </Button>
+            <Button
+              onClick={handleSignOut}
+              variant="outline"
+              className="bg-red-50 hover:bg-red-100 text-red-600 border-red-300 w-full sm:w-auto"
+            >
+              Sign Out
+            </Button>
+          </div>
         </header>
 
         <div className="grid grid-cols-1 md:grid-cols-2 gap-8 md:h-[40vh] mb-4 md:mb-0">
