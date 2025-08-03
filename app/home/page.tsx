@@ -815,11 +815,27 @@ const Home: React.FC = () => {
                               </TableCell>
                             </TableRow>
                             <TableRow>
+                              <TableCell className="font-bold">
+                                Deductions From Income
+                              </TableCell>
+                              <TableCell className="text-right">
+                                ???
+                              </TableCell>
+                            </TableRow>
+                            <TableRow>
                               <TableCell className="font-medium">
                                 - Deposits to Tax Deferred Accounts
                               </TableCell>
                               <TableCell className="text-right">
                                 {curUser["Deposits to Tax Deferred Accounts"]}
+                              </TableCell>
+                            </TableRow>
+                            <TableRow>
+                              <TableCell className="font-medium">
+                                - Deductible Charitable Donations
+                              </TableCell>
+                              <TableCell className="text-right">
+                                {curUser["Deductible Charitable Donations"]}
                               </TableCell>
                             </TableRow>
                             <TableRow>
@@ -832,15 +848,15 @@ const Home: React.FC = () => {
                             </TableRow>
                             <TableRow>
                               <TableCell className="font-medium">
-                                - Deductible Charitable Donations
+                                - Payroll Tax
                               </TableCell>
                               <TableCell className="text-right">
-                                {curUser["Deductible Charitable Donations"]}
+                                ???
                               </TableCell>
                             </TableRow>
                             <TableRow>
                               <TableCell className="font-medium">
-                                - Tax
+                                - Base Income Tax
                               </TableCell>
                               <TableCell className="text-right">
                                 {curUser["Taxes"]}
