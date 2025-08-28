@@ -28,6 +28,7 @@ import { toast, Toaster } from "react-hot-toast";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Analytics } from "@vercel/analytics/react";
+import { isAdminEmail } from '../../lib/utils/adminEmails';
 
 ChartJS.register(ArcElement, Tooltip, Legend);
 
@@ -56,6 +57,7 @@ const Home: React.FC = () => {
   const [meetings, setMeetings] = useState<Meeting[]>([]);
   const [shop, setShop] = useState<ShopItem[]>([]);
   const [isMobile, setIsMobile] = useState(false);
+  const [isAdmin, setIsAdmin] = useState(false);
   const [selectedItem, setSelectedItem] = useState<ShopItem | null>(null);
   const [showPurchaseDialog, setShowPurchaseDialog] = useState(false);
   const [showCustomInputDialog, setShowCustomInputDialog] = useState(false);
@@ -193,6 +195,10 @@ const Home: React.FC = () => {
           // No active session, redirect to login
           router.replace("/");
           return;
+        }
+
+        if (isAdminEmail(data.session?.user.email)) {
+          setIsAdmin(true);
         }
 
         setIsAuthenticated(true);
@@ -815,11 +821,27 @@ const Home: React.FC = () => {
                               </TableCell>
                             </TableRow>
                             <TableRow>
+                              <TableCell className="font-bold">
+                                Deductions From Income
+                              </TableCell>
+                              <TableCell className="text-right">
+
+                              </TableCell>
+                            </TableRow>
+                            <TableRow>
                               <TableCell className="font-medium">
                                 - Deposits to Tax Deferred Accounts
                               </TableCell>
                               <TableCell className="text-right">
                                 {curUser["Deposits to Tax Deferred Accounts"]}
+                              </TableCell>
+                            </TableRow>
+                            <TableRow>
+                              <TableCell className="font-medium">
+                                - Deductible Charitable Donations
+                              </TableCell>
+                              <TableCell className="text-right">
+                                {curUser["Deductible Charitable Donations"]}
                               </TableCell>
                             </TableRow>
                             <TableRow>
@@ -832,18 +854,18 @@ const Home: React.FC = () => {
                             </TableRow>
                             <TableRow>
                               <TableCell className="font-medium">
-                                - Deductible Charitable Donations
+                                - Payroll Tax
                               </TableCell>
                               <TableCell className="text-right">
-                                {curUser["Deductible Charitable Donations"]}
+                              {curUser["Payroll Tax"]}
                               </TableCell>
                             </TableRow>
                             <TableRow>
                               <TableCell className="font-medium">
-                                - Tax
+                                - Base Income Tax
                               </TableCell>
                               <TableCell className="text-right">
-                                {curUser["Taxes"]}
+                                {curUser["Base Income Tax"]}
                               </TableCell>
                             </TableRow>
                             <TableRow>
@@ -884,7 +906,7 @@ const Home: React.FC = () => {
                                 Beginning Cash Balance
                               </TableCell>
                               <TableCell className="text-right">
-                                {curUser["Beginning cash"]}
+                                {curUser["Beginning Cash"]}
                               </TableCell>
                             </TableRow>
                             <TableRow>
@@ -950,10 +972,18 @@ const Home: React.FC = () => {
                             </TableRow>
                             <TableRow>
                               <TableCell className="font-medium">
-                                - Taxes
+                                - Payroll Tax
                               </TableCell>
                               <TableCell className="text-right">
-                                {curUser["Taxes"]}
+                                {curUser["Payroll Tax"]}
+                              </TableCell>
+                            </TableRow>
+                            <TableRow>
+                              <TableCell className="font-medium">
+                                - Base Income Tax
+                              </TableCell>
+                              <TableCell className="text-right">
+                                {curUser["Base Income Tax"]}
                               </TableCell>
                             </TableRow>
                             <TableRow>
@@ -970,6 +1000,14 @@ const Home: React.FC = () => {
                               </TableCell>
                               <TableCell className="text-right">
                                 {curUser["Spending"]}
+                              </TableCell>
+                            </TableRow>
+                            <TableRow>
+                              <TableCell className="font-medium">
+                                - Sales Tax
+                              </TableCell>
+                              <TableCell className="text-right">
+                              {curUser["Sales Tax"]}
                               </TableCell>
                             </TableRow>
                             <TableRow>
@@ -1020,6 +1058,15 @@ const Home: React.FC = () => {
                                 {curUser["Transfers Out"]}
                               </TableCell>
                             </TableRow>
+                            {isAdmin && <TableRow>
+                              <TableCell className="font-medium">
+                                Additional Taxes on All Capital Gains
+                              </TableCell>
+                              <TableCell className="text-right">
+                                {curUser["Transfers Out"]}
+                              </TableCell>
+                            </TableRow>}
+
                             <TableRow>
                               <TableCell className="font-bold">
                                 Ending Cash
