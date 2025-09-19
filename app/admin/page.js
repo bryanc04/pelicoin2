@@ -80,6 +80,7 @@ export default function Home() {
     "Net Worth",
   ]);
   const [searchTerm, setSearchTerm] = useState("");
+  const [supabaseData, setSupabaseData] = useState([]);
 
   useEffect(() => {
     // Fetch initial data from Supabase
@@ -97,7 +98,13 @@ export default function Home() {
             data.sort((a, b) =>
               a.Student.toLowerCase().localeCompare(b.Student.toLowerCase())
             )
-          );
+          ); // this is the original data from Supabase which isn't updated if we upload a CSV
+
+          setSupabaseData(
+            data.sort((a,b) =>
+              a.Student.toLowerCase().localeCompare(b.Student.toLowerCase())
+            )
+          ); // since dataArray gets changed on upload, this is an archive to compare from
         }
       } catch (error) {
         console.error("Unexpected error:", error);
@@ -138,18 +145,45 @@ export default function Home() {
               ])
             )
           );
-
+          
         console.log(data);
+        
+        // Compare Supabase data with CSV data and log absent students
+        const supabaseStudents = new Set(
+          supabaseData.map((entry) => entry.Student)
+        );
+        const csvStudents = new Set(data.map((entry) => entry.Student));
+        const removedStudents = new Set();
+
+        supabaseStudents.forEach((student) => {
+          if (!csvStudents.has(student)) {
+            removedStudents.add(student);
+          }
+        });
 
         // Update Supabase with the new data
         const { error } = await supabase.from("Pelicoin balances").upsert(data);
+        // Remove removed students from Supabase
+        const { error: deleteError } = await supabase
+          .from("Pelicoin balances")
+          .delete()
+          .in("Student", Array.from(removedStudents));
+
+        
+        if (deleteError) {
+          console.error("Error deleting old records:", deleteError);
+          toast.error(deleteError.message);
+        } else {
+          toast.success("Old records successfully deleted");
+        }
+
 
         if (error) {
           console.error("Error updating Supabase:", error);
           toast.error(error.message);
         } else {
           toast.success("Data successfully uploaded");
-          setDataArray(data);
+          setDataArray(data); // this will be completely updated when it runs since it's from the CSV
         }
       },
     });
