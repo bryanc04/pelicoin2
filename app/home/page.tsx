@@ -919,59 +919,6 @@ const Home: React.FC = () => {
                             </TableRow>
                             <TableRow>
                               <TableCell className="font-medium">
-                                +/- Capital Gain/Loss in SMG
-                              </TableCell>
-                              <TableCell className="text-right">
-                                {curUser["Capital Gain/Loss in SMG"]}
-                              </TableCell>
-                            </TableRow>
-                            <TableRow>
-                              <TableCell className="font-medium">
-                                + Grants Received
-                              </TableCell>
-                              <TableCell className="text-right">
-                                {" "}
-                                {curUser["Grants Received"]}
-                              </TableCell>
-                            </TableRow>
-                            <TableRow>
-                              <TableCell className="font-medium">
-                                + Loans Received
-                              </TableCell>
-                              <TableCell className="text-right">
-                                {" "}
-                                {curUser["Loans"]}
-                              </TableCell>
-                            </TableRow>
-                            <TableRow>
-                              <TableCell className="font-medium">
-                                + Total Stock Sales
-                              </TableCell>
-                              <TableCell className="text-right">
-                                {" "}
-                                {curUser["Total Stock Sales"]}
-                              </TableCell>
-                            </TableRow>
-                            <TableRow>
-                              <TableCell className="font-medium">
-                                + Total Bond Sales
-                              </TableCell>
-                              <TableCell className="text-right">
-                                {" "}
-                                {curUser["Total Bond Sales"]}
-                              </TableCell>
-                            </TableRow>
-                            <TableRow>
-                              <TableCell className="font-medium">
-                                + Transfers In
-                              </TableCell>
-                              <TableCell className="text-right">
-                                {" "}
-                                {curUser["Transfers In"]}
-                              </TableCell>
-                            </TableRow>
-                            <TableRow>
-                              <TableCell className="font-medium">
                                 - Payroll Tax
                               </TableCell>
                               <TableCell className="text-right">
@@ -984,14 +931,6 @@ const Home: React.FC = () => {
                               </TableCell>
                               <TableCell className="text-right">
                                 {curUser["Base Income Tax"]}
-                              </TableCell>
-                            </TableRow>
-                            <TableRow>
-                              <TableCell className="font-medium">
-                                - Loan Payments
-                              </TableCell>
-                              <TableCell className="text-right">
-                                {curUser["Loan Payments"]}
                               </TableCell>
                             </TableRow>
                             <TableRow>
@@ -1036,6 +975,15 @@ const Home: React.FC = () => {
                             </TableRow>
                             <TableRow>
                               <TableCell className="font-medium">
+                                + Total Stock Sales
+                              </TableCell>
+                              <TableCell className="text-right">
+                                {" "}
+                                {curUser["Total Stock Sales"]}
+                              </TableCell>
+                            </TableRow>
+                            <TableRow>
+                              <TableCell className="font-medium">
                                 - Total Bond Purchases
                               </TableCell>
                               <TableCell className="text-right">
@@ -1044,10 +992,62 @@ const Home: React.FC = () => {
                             </TableRow>
                             <TableRow>
                               <TableCell className="font-medium">
-                                - SMG
+                                + Total Bond Sales
+                              </TableCell>
+                              <TableCell className="text-right">
+                                {" "}
+                                {curUser["Total Bond Sales"]}
+                              </TableCell>
+                            </TableRow>  
+                            <TableRow>
+                              <TableCell className="font-medium">
+                                - SMG Funds
                               </TableCell>
                               <TableCell className="text-right">
                                 {curUser["SMG"]}
+                              </TableCell>
+                            </TableRow>                          
+                            <TableRow>
+                              <TableCell className="font-medium">
+                                +/- Capital Gain/Loss in SMG
+                              </TableCell>
+                              <TableCell className="text-right">
+                                {curUser["Capital Gain/Loss in SMG"]}
+                              </TableCell>
+                            </TableRow>
+                            <TableRow>
+                              <TableCell className="font-medium">
+                                + Grants Received
+                              </TableCell>
+                              <TableCell className="text-right">
+                                {" "}
+                                {curUser["Grants Received"]}
+                              </TableCell>
+                            </TableRow>
+                            <TableRow>
+                              <TableCell className="font-medium">
+                                + Loans Received
+                              </TableCell>
+                              <TableCell className="text-right">
+                                {" "}
+                                {curUser["Loans"]}
+                              </TableCell>
+                            </TableRow>
+                            <TableRow>
+                              <TableCell className="font-medium">
+                                - Loan Payments
+                              </TableCell>
+                              <TableCell className="text-right">
+                                {curUser["Loan Payments"]}
+                              </TableCell>
+                            </TableRow>
+                            <TableRow>
+                              <TableCell className="font-medium">
+                                + Transfers In
+                              </TableCell>
+                              <TableCell className="text-right">
+                                {" "}
+                                {curUser["Transfers In"]}
                               </TableCell>
                             </TableRow>
                             <TableRow>
@@ -1066,7 +1066,6 @@ const Home: React.FC = () => {
                                 {curUser["Transfers Out"]}
                               </TableCell>
                             </TableRow>}
-
                             <TableRow>
                               <TableCell className="font-bold">
                                 Ending Cash

@@ -34,7 +34,6 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
     }
   };
 
-  // 권한 확인 전/없음 ⇒ 아무 것도 렌더 안 함 (UI 깜빡임 방지)
   if (!ok) return null;
 
   return <>{children}</>;
