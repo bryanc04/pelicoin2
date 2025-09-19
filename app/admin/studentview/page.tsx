@@ -448,9 +448,7 @@ const AdminStudentView = () => {
               <div className="grid grid-cols-1 md:grid-cols-2 gap-8 md:h-[40vh] mb-4 md:mb-0">
                 {/* Pie Chart */}
                 <div className="p-6 bg-white shadow rounded-lg flex flex-col min-h-[300px] md:h-full">
-                  <h2 className="text-xl font-semibold mb-6">
-                    Portfolio Breakdown
-                  </h2>
+                  <h2 className="text-xl font-semibold mb-6">Portfolio Breakdown</h2>
                   {piechartData ? (
                     <div
                       className={`w-full aspect-square ${
@@ -466,7 +464,7 @@ const AdminStudentView = () => {
                   )}
                   <div className="mt-6">
                     <p className="text-center font-medium">
-                      Net Worth: {studentData["Net Worth"] || 0} Pelicoin
+                      Net Worth: {curUser["Net Worth"] || 0} Pelicoin
                     </p>
                     <div className="flex justify-center mt-4">
                       <Dialog>
@@ -547,17 +545,13 @@ const AdminStudentView = () => {
                                   <TableRow>
                                     <TableCell className="font-medium"></TableCell>
                                     <TableCell>Current Stocks</TableCell>
-                                    <TableCell>
-                                      {curUser["Current Stocks"]}
-                                    </TableCell>
+                                    <TableCell>{curUser["Current Stocks"]}</TableCell>
                                     <TableCell className="text-right"></TableCell>
                                   </TableRow>
                                   <TableRow>
                                     <TableCell className="font-medium"></TableCell>
                                     <TableCell>Current Bonds</TableCell>
-                                    <TableCell>
-                                      {curUser["Current Bonds"]}
-                                    </TableCell>
+                                    <TableCell>{curUser["Current Bonds"]}</TableCell>
                                     <TableCell className="text-right"></TableCell>
                                   </TableRow>
                                   <TableRow>
@@ -574,17 +568,14 @@ const AdminStudentView = () => {
                                     <TableCell></TableCell>
                                     <TableCell className="text-right">
                                       {(
-                                        curUser["Stocks +1"] +
-                                        curUser["Bonds +1"]
+                                        curUser["Stocks +1"] + curUser["Bonds +1"]
                                       ).toFixed(2) || "N/A"}
                                     </TableCell>
                                   </TableRow>
                                   <TableRow>
                                     <TableCell className="font-medium"></TableCell>
                                     <TableCell>Stocks +1</TableCell>
-                                    <TableCell>
-                                      {curUser["Stocks +1"]}
-                                    </TableCell>
+                                    <TableCell>{curUser["Stocks +1"]}</TableCell>
                                     <TableCell className="text-right"></TableCell>
                                   </TableRow>
                                   <TableRow>
@@ -601,17 +592,14 @@ const AdminStudentView = () => {
                                     <TableCell></TableCell>
                                     <TableCell className="text-right">
                                       {(
-                                        curUser["Stocks +2"] +
-                                        curUser["Bonds +2"]
+                                        curUser["Stocks +2"] + curUser["Bonds +2"]
                                       ).toFixed(2) || "N/A"}
                                     </TableCell>
                                   </TableRow>
                                   <TableRow>
                                     <TableCell className="font-medium"></TableCell>
                                     <TableCell>Stocks +2</TableCell>
-                                    <TableCell>
-                                      {curUser["Stocks +2"]}
-                                    </TableCell>
+                                    <TableCell>{curUser["Stocks +2"]}</TableCell>
                                     <TableCell className="text-right"></TableCell>
                                   </TableRow>
                                   <TableRow>
@@ -628,17 +616,14 @@ const AdminStudentView = () => {
                                     <TableCell></TableCell>
                                     <TableCell className="text-right">
                                       {(
-                                        curUser["Stocks +3"] +
-                                        curUser["Bonds +3"]
+                                        curUser["Stocks +3"] + curUser["Bonds +3"]
                                       ).toFixed(2) || "N/A"}
                                     </TableCell>
                                   </TableRow>
                                   <TableRow>
                                     <TableCell className="font-medium"></TableCell>
                                     <TableCell>Stocks +3</TableCell>
-                                    <TableCell>
-                                      {curUser["Stocks +3"]}
-                                    </TableCell>
+                                    <TableCell>{curUser["Stocks +3"]}</TableCell>
                                     <TableCell className="text-right"></TableCell>
                                   </TableRow>
                                   <TableRow>
@@ -647,6 +632,7 @@ const AdminStudentView = () => {
                                     <TableCell>{curUser["Bonds +3"]}</TableCell>
                                     <TableCell className="text-right"></TableCell>
                                   </TableRow>
+      
                                   <TableRow>
                                     <TableCell className="font-bold">
                                       -Liabilities
@@ -678,14 +664,10 @@ const AdminStudentView = () => {
                             </TabsContent>
                             <TabsContent value="incometax">
                               <Table>
-                                <TableCaption>
-                                  Your income/tax statment.
-                                </TableCaption>
+                                <TableCaption>Your income/tax statment.</TableCaption>
                                 <TableHeader>
                                   <TableRow>
-                                    <TableHead className="w-[200px]">
-                                      Name
-                                    </TableHead>
+                                    <TableHead className="w-[200px]">Name</TableHead>
                                     <TableHead className="text-right">
                                       Value
                                     </TableHead>
@@ -711,11 +693,7 @@ const AdminStudentView = () => {
                                       +/- Capital Gain/Loss on Current Stocks{" "}
                                     </TableCell>
                                     <TableCell className="text-right">
-                                      {
-                                        curUser[
-                                          "Capital Gain/Loss on Current Stocks"
-                                        ]
-                                      }
+                                      {curUser["Capital Gain/Loss on Current Stocks"]}
                                     </TableCell>
                                   </TableRow>
                                   <TableRow>
@@ -732,11 +710,7 @@ const AdminStudentView = () => {
                                       + Interest Income on Current Bonds
                                     </TableCell>
                                     <TableCell className="text-right">
-                                      {
-                                        curUser[
-                                          "Interest Earned on Current Bonds"
-                                        ]
-                                      }
+                                      {curUser["Interest Earned on Current Bonds"]}
                                     </TableCell>
                                   </TableRow>
                                   <TableRow>
@@ -752,15 +726,27 @@ const AdminStudentView = () => {
                                     </TableCell>
                                   </TableRow>
                                   <TableRow>
+                                    <TableCell className="font-bold">
+                                      Deductions From Income
+                                    </TableCell>
+                                    <TableCell className="text-right">
+      
+                                    </TableCell>
+                                  </TableRow>
+                                  <TableRow>
                                     <TableCell className="font-medium">
                                       - Deposits to Tax Deferred Accounts
                                     </TableCell>
                                     <TableCell className="text-right">
-                                      {
-                                        curUser[
-                                          "Deposits to Tax Deferred Accounts"
-                                        ]
-                                      }
+                                      {curUser["Deposits to Tax Deferred Accounts"]}
+                                    </TableCell>
+                                  </TableRow>
+                                  <TableRow>
+                                    <TableCell className="font-medium">
+                                      - Deductible Charitable Donations
+                                    </TableCell>
+                                    <TableCell className="text-right">
+                                      {curUser["Deductible Charitable Donations"]}
                                     </TableCell>
                                   </TableRow>
                                   <TableRow>
@@ -773,10 +759,18 @@ const AdminStudentView = () => {
                                   </TableRow>
                                   <TableRow>
                                     <TableCell className="font-medium">
-                                      - Tax
+                                      - Payroll Tax
                                     </TableCell>
                                     <TableCell className="text-right">
-                                      {curUser["Taxes"]}
+                                    {curUser["Payroll Tax"]}
+                                    </TableCell>
+                                  </TableRow>
+                                  <TableRow>
+                                    <TableCell className="font-medium">
+                                      - Base Income Tax
+                                    </TableCell>
+                                    <TableCell className="text-right">
+                                      {curUser["Base Income Tax"]}
                                     </TableCell>
                                   </TableRow>
                                   <TableRow>
@@ -805,9 +799,7 @@ const AdminStudentView = () => {
                                 </TableCaption>
                                 <TableHeader>
                                   <TableRow>
-                                    <TableHead className="w-[200px]">
-                                      Name
-                                    </TableHead>
+                                    <TableHead className="w-[200px]">Name</TableHead>
                                     <TableHead className="text-right">
                                       Value
                                     </TableHead>
@@ -819,7 +811,7 @@ const AdminStudentView = () => {
                                       Beginning Cash Balance
                                     </TableCell>
                                     <TableCell className="text-right">
-                                      {curUser["Beginning cash"]}
+                                      {curUser["Beginning Cash"]}
                                     </TableCell>
                                   </TableRow>
                                   <TableRow>
@@ -830,6 +822,96 @@ const AdminStudentView = () => {
                                       {curUser["Wage Income"]}
                                     </TableCell>
                                   </TableRow>
+                                  <TableRow>
+                                    <TableCell className="font-medium">
+                                      - Payroll Tax
+                                    </TableCell>
+                                    <TableCell className="text-right">
+                                      {curUser["Payroll Tax"]}
+                                    </TableCell>
+                                  </TableRow>
+                                  <TableRow>
+                                    <TableCell className="font-medium">
+                                      - Base Income Tax
+                                    </TableCell>
+                                    <TableCell className="text-right">
+                                      {curUser["Base Income Tax"]}
+                                    </TableCell>
+                                  </TableRow>
+                                  <TableRow>
+                                    <TableCell className="font-medium">
+                                      - Spending
+                                    </TableCell>
+                                    <TableCell className="text-right">
+                                      {curUser["Spending"]}
+                                    </TableCell>
+                                  </TableRow>
+                                  <TableRow>
+                                    <TableCell className="font-medium">
+                                      - Sales Tax
+                                    </TableCell>
+                                    <TableCell className="text-right">
+                                    {curUser["Sales Tax"]}
+                                    </TableCell>
+                                  </TableRow>
+                                  <TableRow>
+                                    <TableCell className="font-medium">
+                                      - Charitable Donations
+                                    </TableCell>
+                                    <TableCell className="text-right">
+                                      {curUser["Charitable Donations"]}
+                                    </TableCell>
+                                  </TableRow>
+                                  <TableRow>
+                                    <TableCell className="font-medium">
+                                      - Fees and Penalties
+                                    </TableCell>
+                                    <TableCell className="text-right">
+                                      {curUser["Fees and Penalties"]}
+                                    </TableCell>
+                                  </TableRow>
+                                  <TableRow>
+                                    <TableCell className="font-medium">
+                                      - Total Stock Purchases
+                                    </TableCell>
+                                    <TableCell className="text-right">
+                                      {curUser["Total Stock Purchases"]}
+                                    </TableCell>
+                                  </TableRow>
+                                  <TableRow>
+                                    <TableCell className="font-medium">
+                                      + Total Stock Sales
+                                    </TableCell>
+                                    <TableCell className="text-right">
+                                      {" "}
+                                      {curUser["Total Stock Sales"]}
+                                    </TableCell>
+                                  </TableRow>
+                                  <TableRow>
+                                    <TableCell className="font-medium">
+                                      - Total Bond Purchases
+                                    </TableCell>
+                                    <TableCell className="text-right">
+                                      {curUser["Total Bond Purchases"]}
+                                    </TableCell>
+                                  </TableRow>
+                                  <TableRow>
+                                    <TableCell className="font-medium">
+                                      + Total Bond Sales
+                                    </TableCell>
+                                    <TableCell className="text-right">
+                                      {" "}
+                                      {curUser["Total Bond Sales"]}
+                                    </TableCell>
+                                  </TableRow>  
+                                  <TableRow>
+                                    <TableCell className="font-medium">
+                                      - SMG Funds
+                                    </TableCell>
+                                    <TableCell className="text-right">
+                                      {curUser["SMG"]}
+                                    </TableCell>
+                                  </TableRow>                          
                                   <TableRow>
                                     <TableCell className="font-medium">
                                       +/- Capital Gain/Loss in SMG
@@ -858,32 +940,6 @@ const AdminStudentView = () => {
                                   </TableRow>
                                   <TableRow>
                                     <TableCell className="font-medium">
-                                      + Total Stock Sales
-                                    </TableCell>
-                                    <TableCell className="text-right">
-                                      {" "}
-                                      {curUser["Total Stock Sales"]}
-                                    </TableCell>
-                                  </TableRow>
-                                  <TableRow>
-                                    <TableCell className="font-medium">
-                                      + Total Bond Sales
-                                    </TableCell>
-                                    <TableCell className="text-right">
-                                      {" "}
-                                      {curUser["Total Bond Sales"]}
-                                    </TableCell>
-                                  </TableRow>
-                                  <TableRow>
-                                    <TableCell className="font-medium">
-                                      - Taxes
-                                    </TableCell>
-                                    <TableCell className="text-right">
-                                      {curUser["Taxes"]}
-                                    </TableCell>
-                                  </TableRow>
-                                  <TableRow>
-                                    <TableCell className="font-medium">
                                       - Loan Payments
                                     </TableCell>
                                     <TableCell className="text-right">
@@ -892,44 +948,29 @@ const AdminStudentView = () => {
                                   </TableRow>
                                   <TableRow>
                                     <TableCell className="font-medium">
-                                      - Spending
+                                      + Transfers In
                                     </TableCell>
                                     <TableCell className="text-right">
-                                      {curUser["Spending"]}
+                                      {" "}
+                                      {curUser["Transfers In"]}
                                     </TableCell>
                                   </TableRow>
                                   <TableRow>
                                     <TableCell className="font-medium">
-                                      - Fees and Penalties
+                                      - Transfers Out
                                     </TableCell>
                                     <TableCell className="text-right">
-                                      {curUser["Fees and Penalties"]}
+                                      {curUser["Transfers Out"]}
                                     </TableCell>
                                   </TableRow>
-                                  <TableRow>
+                                  {/* <TableRow>
                                     <TableCell className="font-medium">
-                                      - Total Stock Purchases
+                                      Additional Taxes on All Capital Gains
                                     </TableCell>
                                     <TableCell className="text-right">
-                                      {curUser["Total Stock Purchases"]}
+                                      {curUser["Transfers Out"]}
                                     </TableCell>
-                                  </TableRow>
-                                  <TableRow>
-                                    <TableCell className="font-medium">
-                                      - Total Bond Purchases
-                                    </TableCell>
-                                    <TableCell className="text-right">
-                                      {curUser["Total Bond Purchases"]}
-                                    </TableCell>
-                                  </TableRow>
-                                  <TableRow>
-                                    <TableCell className="font-medium">
-                                      - SMG
-                                    </TableCell>
-                                    <TableCell className="text-right">
-                                      {curUser["SMG"]}
-                                    </TableCell>
-                                  </TableRow>
+                                  </TableRow> */} 
                                   <TableRow>
                                     <TableCell className="font-bold">
                                       Ending Cash
@@ -965,22 +1006,24 @@ const AdminStudentView = () => {
                         className="absolute inset-0 p-6 bg-white shadow rounded-lg overflow-hidden flex flex-col"
                         style={{ zIndex: activeTab === "meetings" ? 1 : -1 }}
                       >
-                        <h2 className="text-xl font-semibold mb-4">
+                        <h2
+                          className="text-xl font-semibold mb-4"
+                          style={{ zIndex: activeTab === "meetings" ? 1 : -1 }}
+                        >
                           Upcoming Meetings
                         </h2>
-                        <div className="flex-1 overflow-y-auto min-h-0">
+                        <div
+                          className="flex-1 overflow-y-auto min-h-0"
+                          style={{ zIndex: activeTab === "meetings" ? 1 : -1 }}
+                        >
                           {meetings.length > 0 ? (
                             <ul className="space-y-4">
                               {meetings.map((meeting) => {
-                                const isRegistered =
-                                  meeting.Attendees?.includes(
-                                    studentData["First Name"] +
-                                      " " +
-                                      studentData["Last Name"]
-                                  );
-                                const isFull =
-                                  (meeting.Attendees?.length || 0) >= 15;
-
+                                const isRegistered = meeting.Attendees?.includes(
+                                  curUser["First Name"] + " " + curUser["Last Name"]
+                                );
+                                const isFull = (meeting.Attendees?.length || 0) >= 15;
+      
                                 return (
                                   <li
                                     key={meeting.Topic}
@@ -994,21 +1037,40 @@ const AdminStudentView = () => {
                                         {formatDate(new Date(meeting.Date))}
                                       </p>
                                       <p className="text-xs text-gray-500 mt-1">
-                                        {meeting.Attendees?.length || 0}/15
-                                        spots filled
+                                        {meeting.Attendees?.length || 0}/15 spots
+                                        filled
                                       </p>
                                     </div>
-                                    <Button
-                                      variant="outline"
-                                      className="w-full sm:w-auto"
-                                      disabled={isFull}
-                                    >
-                                      {isRegistered
-                                        ? "Registered"
-                                        : isFull
-                                        ? "Full"
-                                        : "Register"}
-                                    </Button>
+                                    {isRegistered ? (
+                                      <Button
+                                        variant="outline"
+                                        className="w-full sm:w-auto bg-red-50 hover:bg-red-100 text-red-600 border-red-300"
+                                        disabled={loading}
+                                        // onClick={() =>
+                                        //   handleUnregister(
+                                        //     meeting.Topic,
+                                        //     meeting.Attendees || [],
+                                        //     meeting.Date
+                                        //   )
+                                        // }
+                                      >
+                                        Unregister
+                                      </Button>
+                                    ) : (
+                                      <Button
+                                        className="w-full sm:w-auto"
+                                        disabled={loading || isFull}
+                                        // // onClick={() =>
+                                        // //   handleSignUp(
+                                        // //     meeting.Topic,
+                                        // //     meeting.Attendees || [],
+                                        // //     meeting.Date
+                                        // //   )
+                                        // }
+                                      >
+                                        {isFull ? "Full" : "Sign Up"}
+                                      </Button>
+                                    )}
                                   </li>
                                 );
                               })}
@@ -1018,7 +1080,6 @@ const AdminStudentView = () => {
                           )}
                         </div>
                       </TabsContent>
-
                       <TabsContent
                         value="shop"
                         className="absolute inset-0 p-6 bg-white shadow rounded-lg overflow-hidden flex flex-col"
@@ -1061,15 +1122,12 @@ const AdminStudentView = () => {
                           )}
                         </div>
                       </TabsContent>
-
                       <TabsContent
                         value="transfers"
                         className="absolute inset-0 p-6 bg-white shadow rounded-lg overflow-hidden flex flex-col"
                         style={{ zIndex: activeTab === "transfers" ? 1 : -1 }}
                       >
-                        <h2 className="text-xl font-semibold mb-4">
-                          Transfers
-                        </h2>
+                        <h2 className="text-xl font-semibold mb-4">Transfers</h2>
                         <div className="flex-1 overflow-y-auto min-h-0">
                           <Button onClick={() => setShowTransferDialog(true)}>
                             New Transfer
@@ -1083,30 +1141,24 @@ const AdminStudentView = () => {
 
               {/* Ticket Status */}
               <div className="mt-8 md:mt-8 p-6 bg-white shadow rounded-lg min-h-[150px] md:h-[20vh]">
-                <h2 className="text-xl font-semibold text-center">
-                  Ticket Status
-                </h2>
+                <h2 className="text-xl font-semibold text-center">Ticket Status</h2>
                 <div className="flex items-center justify-center h-full gap-4">
                   <img
                     alt="ticket"
                     src={
-                      studentData["Celebration Ticket"] == 1
+                      curUser["Celebration Ticket"] == 1
                         ? "/ticket.png"
                         : "/tickete.png"
                     }
                     className="w-24 h-auto"
                   />
                   <p className="text-right text-sm sm:text-base max-w-[60%]">
-                    {studentData["Celebration Ticket"] == 1 ? (
-                      <>
-                        Hooray! You have a ticket for the End-of-Year
-                        Celebration!
-                      </>
+                    {curUser["Celebration Ticket"] == 1 ? (
+                      <>Hooray! You have a ticket for the End-of-Year Celebration!</>
                     ) : (
                       <>
-                        Unfortunately, you do not have a ticket for the
-                        End-of-Year celebration :(. Please contact Dr. Fisher to
-                        purchase.
+                        Unfortunately, you do not have a ticket for the End-of-Year
+                        celebration :(. Please contact Dr. Fisher to purchase.
                       </>
                     )}
                   </p>
@@ -1176,7 +1228,7 @@ const AdminStudentView = () => {
           </DialogContent>
         </Dialog>
 
-        {/* Transfer Dialog */}
+       {/* Transfer Dialog */}
         <Dialog open={showTransferDialog} onOpenChange={setShowTransferDialog}>
           <DialogContent>
             <DialogHeader>
