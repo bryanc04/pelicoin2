@@ -1252,8 +1252,8 @@ const Home: React.FC = () => {
                 <>Hooray! You have a ticket for the End-of-Year Celebration!</>
               ) : (
                 <>
-                  Unfortunately, you do not have a ticket for the End-of-Year
-                  celebration :(. Please contact Dr. Fisher to purchase.
+                  Unfortunately, you don't have a ticket for the End-of-Year
+                  celebration :( Purchase above in shop.
                 </>
               )}
             </p>
