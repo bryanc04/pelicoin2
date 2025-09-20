@@ -1058,14 +1058,7 @@ const Home: React.FC = () => {
                                 {curUser["Transfers Out"]}
                               </TableCell>
                             </TableRow>
-                            {/* {isAdmin && <TableRow>
-                              <TableCell className="font-medium">
-                                Additional Taxes on All Capital Gains
-                              </TableCell>
-                              <TableCell className="text-right">
-                                {curUser["Transfers Out"]} 
-                              </TableCell>
-                            </TableRow>} */}
+                            {/* Additional taxes are admin internal info only */}
                             <TableRow>
                               <TableCell className="font-bold">
                                 Ending Cash

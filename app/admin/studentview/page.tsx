@@ -963,14 +963,30 @@ const AdminStudentView = () => {
                                       {curUser["Transfers Out"]}
                                     </TableCell>
                                   </TableRow>
-                                  {/* <TableRow>
+                                  <TableRow>
                                     <TableCell className="font-medium">
-                                      Additional Taxes on All Capital Gains
+                                      - Additional Taxes on Capital Gains
                                     </TableCell>
                                     <TableCell className="text-right">
-                                      {curUser["Transfers Out"]}
+                                      {curUser["Additional Taxes on Capital Gains"]}
                                     </TableCell>
-                                  </TableRow> */} 
+                                  </TableRow> 
+                                  <TableRow>
+                                    <TableCell className="font-medium">
+                                      - Additional Taxes on Interest
+                                    </TableCell>
+                                    <TableCell className="text-right">
+                                      {curUser["Additional Taxes on Interest"]}
+                                    </TableCell>
+                                  </TableRow>
+                                  <TableRow>
+                                    <TableCell className="font-medium">
+                                      - Total Taxes
+                                    </TableCell>
+                                    <TableCell className="text-right">
+                                      {curUser["Total Taxes"]}
+                                    </TableCell>
+                                  </TableRow>
                                   <TableRow>
                                     <TableCell className="font-bold">
                                       Ending Cash

@@ -67,6 +67,9 @@ const columnHeaders = [
   "Charitable Donations",
   "Transfers In",
   "Transfers Out",
+  "Additional Taxes on Capital Gains",
+  "Additional Taxes on Interest",
+  "Total Taxes",
 ];
 
 export default function Home() {
