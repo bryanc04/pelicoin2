@@ -523,7 +523,7 @@ const Home: React.FC = () => {
               className="bg-blue-50 hover:bg-blue-100 text-blue-600 border-blue-300 w-full sm:w-auto"
               onClick={() =>
                 window.open(
-                  "https://loomischaffeeschool-my.sharepoint.com/:w:/g/personal/lfisher_internal_loomis_org/EZHoTEBgijVDjtOXpIY6JyABAUlpjdzcM1_Uc3C3NreYJQ?e=tOhVaJ",
+                  "https://loomischaffeeschool-my.sharepoint.com/:w:/g/personal/lfisher_internal_loomis_org/ESp4JiuylpZGpv9HvBEYZOABceOGQnCSgcAfJj_K91jbtg?e=38froa",
                   "_blank"
                 )
               }
