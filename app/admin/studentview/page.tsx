@@ -163,6 +163,14 @@ const AdminStudentView = () => {
     });
   };
 
+  const extractMaxFromTopic = (topic = "") => {
+    const m = topic.match(/\[max:(\d+)\]/i);
+    return m ? Number(m[1]) : 15;
+  };
+
+  const extractTopicFromTopic = (topic = "") =>
+  topic.replace(/\s*\[max:\d+\]\s*/i, "").trim();
+
   useEffect(() => {
     if (searchTerm) {
       const filtered = students.filter((student) =>
@@ -1081,10 +1089,11 @@ const AdminStudentView = () => {
                           {meetings.length > 0 ? (
                             <ul className="space-y-4">
                               {meetings.map((meeting) => {
+                                const meetingMax = extractMaxFromTopic(meeting.Topic);
                                 const isRegistered = meeting.Attendees?.includes(
                                   curUser["First Name"] + " " + curUser["Last Name"]
                                 );
-                                const isFull = (meeting.Attendees?.length || 0) >= 15;
+                                const isFull = ((meeting.Attendees?.length || 0)) >= meetingMax;
       
                                 return (
                                   <li
@@ -1093,13 +1102,13 @@ const AdminStudentView = () => {
                                   >
                                     <div>
                                       <h3 className="font-bold text-sm sm:text-base">
-                                        {meeting.Topic}
+                                        {extractTopicFromTopic(meeting.Topic)}
                                       </h3>
                                       <p className="text-xs sm:text-sm text-gray-500">
                                         {formatDate(new Date(meeting.Date))}
                                       </p>
                                       <p className="text-xs text-gray-500 mt-1">
-                                        {meeting.Attendees?.length || 0}/15 spots
+                                        {meeting.Attendees?.length || 0}/{meetingMax} spots
                                         filled
                                       </p>
                                     </div>
