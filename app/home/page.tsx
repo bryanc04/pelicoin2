@@ -29,6 +29,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Analytics } from "@vercel/analytics/react";
 import { isAdminEmail } from '../../lib/utils/adminEmails';
+import { max } from "date-fns";
 
 ChartJS.register(ArcElement, Tooltip, Legend);
 
@@ -193,6 +194,14 @@ const Home: React.FC = () => {
       timeZone: "America/New_York",
     });
   };
+  
+  const extractMaxFromTopic = (topic = "") => {
+    const m = topic.match(/\[max:(\d+)\]/i);
+    return m ? Number(m[1]) : 15;
+  };
+
+  const extractTopicFromTopic = (topic = "") =>
+  topic.replace(/\s*\[max:\d+\]\s*/i, "").trim();
 
   // Check auth status on mount and when page hydrates
   useEffect(() => {
@@ -293,8 +302,10 @@ const Home: React.FC = () => {
   ) => {
     setLoading(true);
 
+    const maxStudents = extractMaxFromTopic(meetingTopic);
+
     // Check if meeting is full
-    if (attendees.length >= 15) {
+    if ((attendees.length || 0 ) >= maxStudents) {
       toast.error("This meeting is full!");
       setLoading(false);
       return;
@@ -1156,10 +1167,11 @@ const Home: React.FC = () => {
                     {meetings.length > 0 ? (
                       <ul className="space-y-4">
                         {meetings.map((meeting) => {
+                          const meetingMax = extractMaxFromTopic(meeting.Topic);
                           const isRegistered = meeting.Attendees?.includes(
                             curUser["First Name"] + " " + curUser["Last Name"]
                           );
-                          const isFull = (meeting.Attendees?.length || 0) >= 15;
+                          const isFull = (meeting.Attendees?.length || 0) >= meetingMax;
 
                           return (
                             <li
@@ -1174,7 +1186,7 @@ const Home: React.FC = () => {
                                   {formatDate(new Date(meeting.Date))}
                                 </p>
                                 <p className="text-xs text-gray-500 mt-1">
-                                  {meeting.Attendees?.length || 0}/15 spots
+                                  {meeting.Attendees?.length || 0}/{meetingMax} spots
                                   filled
                                 </p>
                               </div>
