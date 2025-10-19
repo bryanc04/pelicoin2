@@ -35,6 +35,7 @@ export default function UpcomingMeetings() {
   const [newEventName, setNewEventName] = React.useState("");
   const [newEventDate, setNewEventDate] = React.useState();
   const [newEventTime, setNewEventTime] = React.useState("");
+  const [newMaxStudents, setNewMaxStudents] = React.useState("");
 
   useEffect(() => emailjs.init("D6aKMxno3vr0IgN3e"), []);
 
@@ -85,6 +86,14 @@ export default function UpcomingMeetings() {
     return cleaned;
   };
 
+  const extractMaxFromTopic = (topic = "") => {
+    const m = topic.match(/\[max:(\d+)\]/i);
+    return m ? Number(m[1]) : 15;
+  };
+
+  const extractTopicFromTopic = (topic = "") =>
+  topic.replace(/\s*\[max:\d+\]\s*/i, "").trim();
+
   const fetchData = async () => {
     setLoading(true);
     try {
@@ -92,7 +101,6 @@ export default function UpcomingMeetings() {
         .from("Meetings")
         .select()
         .order("Date", { ascending: true });
-
       if (error) {
         console.error("Error fetching data:", error);
         toast.error("Failed to fetch data");
@@ -112,8 +120,14 @@ export default function UpcomingMeetings() {
   }, []);
 
   const handleAddMeeting = async () => {
-    if (!newEventName || !newEventDate || !newEventTime) {
+    if (!newEventName || !newEventDate || !newEventTime || !newMaxStudents) {
       toast.error("Please fill in all values");
+      return;
+    }
+
+    const max = Number(newMaxStudents);
+    if (Number.isNaN(max) || !Number.isInteger(max) || max <= 0) {
+      toast.error("Please enter a valid positive integer for max students");
       return;
     }
 
@@ -127,8 +141,10 @@ export default function UpcomingMeetings() {
     const [hours, minutes] = newEventTime.split(":");
     combinedDateTime.setHours(parseInt(hours), parseInt(minutes), 0, 0);
 
+    const topicWithMax = `${newEventName} [max:${max}]`;
+
     const newMeeting = {
-      Topic: newEventName,
+      Topic: topicWithMax,
       Date: combinedDateTime.toISOString(),
       Attendees: [],
       id: Math.floor(Math.random() * 1000000000000000),
@@ -146,6 +162,7 @@ export default function UpcomingMeetings() {
       setNewEventName("");
       setNewEventDate(undefined);
       setNewEventTime("");
+      setNewMaxStudents("");
       fetchData();
     }
   };
@@ -265,13 +282,14 @@ export default function UpcomingMeetings() {
                       <TableHead>Topic</TableHead>
                       <TableHead>Time</TableHead>
                       <TableHead>Attendees</TableHead>
+                      <TableHead>Max students</TableHead>
                       <TableHead>Actions</TableHead>
                     </TableRow>
                   </TableHeader>
                   <TableBody>
                     {data.map((row) => (
                       <TableRow key={row.id || Math.random() * 10}>
-                        <TableCell>{row.Topic}</TableCell>
+                        <TableCell>{extractTopicFromTopic(row.Topic)}</TableCell>
                         <TableCell>{formatDate(row.Date)}</TableCell>
 
                         <TableCell>
@@ -296,7 +314,7 @@ export default function UpcomingMeetings() {
                             )}
                           </div>
                         </TableCell>
-
+                        <TableCell>{extractMaxFromTopic(row.Topic) ?? "—"}</TableCell>
                         <TableCell>
                           <Button
                             variant="ghost"
@@ -320,7 +338,7 @@ export default function UpcomingMeetings() {
                 </p>
               )}
             </ScrollArea>
-            <div className="grid grid-cols-3 gap-4 mt-4">
+            <div className="grid grid-cols-4 gap-4 mt-4">
               <Input
                 placeholder="Meeting Topic"
                 value={newEventName}
@@ -362,6 +380,23 @@ export default function UpcomingMeetings() {
                   onChange={(e) =>
                     setNewEventTime(formatTimeInput(e.target.value))
                   }
+                  className="pl-10"
+                />
+              </div>
+              <div className="relative">
+                <div className="absolute inset-y-0 left-0 flex items-center pl-3 pointer-events-none">
+                  <Clock className="h-4 w-4 text-gray-400" />
+                </div>
+                <Input
+                  type="number"
+                  min={1}
+                  step={1}
+                  placeholder="Max students"
+                  value={newMaxStudents}
+                  onChange={(e) => {
+                    const v = e.target.value.replace(/[^\d]/g, ""); // keep integers only
+                    setNewMaxStudents(v);
+                  }}
                   className="pl-10"
                 />
               </div>
