@@ -190,7 +190,7 @@ export default function UpcomingMeetings() {
   
       if (!error) {
         fetchData();
-        toast.success("Succesfully unregistered " + removedUserName + " from " + meetingTopic);
+        toast.success("Successfully unregistered " + removedUserName + " from " + meetingTopic);
         addNotification(
           "Un-registers",
           `Admin unregistered ${removedUserName} 
@@ -285,7 +285,7 @@ export default function UpcomingMeetings() {
                                   onClick={() =>
                                     handleUnregister(row.Topic, row.Date, row.Attendees, name)
                                   }
-                                  className="text-grey-500 hover:text-red-700 h-5 w-5 p-0"
+                                  className="text-gray-500 hover:text-red-700 h-5 w-5 p-0"
                                 >
                                   <Trash2 className="h-3 w-3" />
                                 </Button>
