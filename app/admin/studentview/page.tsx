@@ -67,6 +67,14 @@ interface TransferRequest {
   amount: number;
 }
 
+interface TransferCardRow {
+  id: string;
+  amount: number | null;
+  source: string;
+  destination: string;
+  created_at: string;
+}
+
 const AdminStudentView = () => {
   const [selectedStudent, setSelectedStudent] = useState<string | null>(null);
   const [studentData, setStudentData] = useState<any>({});
@@ -93,6 +101,9 @@ const AdminStudentView = () => {
 
   const router = useRouter();
   const [curUser, setCurUser] = useState<any>({});
+
+  const [transfers, setTransfers] = useState<TransferCardRow[]>([]);
+  const [transfersLoading, setTransfersLoading] = useState(false);
 
   useEffect(() => {
     const checkMobile = () => {
@@ -204,6 +215,40 @@ const AdminStudentView = () => {
     }
   };
 
+  const fetchTransfers = async (userLike: any) => {
+    if (!userLike) return;
+    const fullName = `${userLike["First Name"]} ${userLike["Last Name"]}`.toLowerCase();
+    setTransfersLoading(true);
+    const { data, error } = await supabase
+      .from("Notifications")
+      .select("id, Category, Content, Time")
+      .eq("Category", "Transfer Requests")
+      .order("Time", { ascending: false });
+    if (error) {
+      console.error("fetchTransfers error:", error);
+      setTransfers([]);
+      setTransfersLoading(false);
+      return;
+    }
+    const mine = (data || []).filter(
+      (n: any) => (n.Content || "").toLowerCase().startsWith(fullName)
+    );
+    const rows: TransferCardRow[] = mine.map((n: any) => {
+      const content: string = n.Content || "";
+      const m =
+        /transfer\s+(\d+(?:\.\d+)?)\s+Pelicoin\s+from\s+(.+?)\s+to\s+(.+)$/i.exec(content);
+      return {
+        id: String(n.id),
+        amount: m ? Number(m[1]) : null,
+        source: m ? m[2] : "—",
+        destination: m ? m[3] : "—",
+        created_at: n.Time || new Date().toISOString(),
+      };
+    });
+    setTransfers(rows);
+    setTransfersLoading(false);
+  };
+
   const handleStudentSelect = (studentName: string) => {
     const student = students.find((s) => s.Student === studentName);
     if (student) {
@@ -216,6 +261,7 @@ const AdminStudentView = () => {
       setSelectedStudent(studentName);
       buildPieChartData(userData);
       setIsPopoverOpen(false);
+      fetchTransfers(userData);
     }
   };
 
@@ -1144,12 +1190,41 @@ const AdminStudentView = () => {
                         style={{ zIndex: activeTab === "transfers" ? 1 : -1 }}
                       >
                         <h2 className="text-xl font-semibold mb-4">Transfers</h2>
-                        <div className="flex-1 overflow-y-auto min-h-0">
-                          <Button onClick={() => setShowTransferDialog(true)}>
-                            New Transfer
-                          </Button>
+                        <div className="mb-4">
+                          <Button onClick={() => setShowTransferDialog(true)}>New Transfer</Button>
                         </div>
-                      </TabsContent>
+
+                        <div className="flex-1 overflow-y-auto min-h-0">
+                          {transfersLoading ? (
+                            <p className="text-sm text-gray-500">Loading transfers…</p>
+                          ) : transfers.length ? (
+                            <ul className="space-y-4">
+                              {transfers.map((t) => (
+                                <li
+                                  key={t.id}
+                                  className="p-4 bg-gray-50 rounded-lg flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2"
+                                >
+                                  <div>
+                                    <h3 className="font-bold text-sm sm:text-base">
+                                      {t.source} → {t.destination}
+                                    </h3>
+                                    <p className="text-xs sm:text-sm text-gray-500">
+                                      {formatDate(t.created_at)}
+                                    </p>
+                                  </div>
+                                  <div className="flex items-center gap-3">
+                                    <span className="text-sm sm:text-base font-semibold">
+                                      {t.amount !== null ? `${t.amount.toFixed(2)} Pelicoin` : "—"}
+                                    </span>
+                                  </div>
+                                </li>
+                              ))}
+                            </ul>
+                          ) : (
+                            <p className="text-sm text-gray-500">No transfer requests yet.</p>
+                          )}
+                        </div>
+                        </TabsContent>
                     </div>
                   </Tabs>
                 </div>

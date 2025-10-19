@@ -2,7 +2,7 @@
 
 import React from "react";
 import { format } from "date-fns";
-import { Calendar as CalendarIcon, Clock, Trash2, Loader2 } from "lucide-react";
+import { Calendar as CalendarIcon, Clock, Trash2, Cog, Loader2 } from "lucide-react";
 import supabase from "../../supabaseClient";
 import { useRef, useEffect, useState } from "react";
 import { Button } from "@/components/ui/button";
@@ -149,6 +149,62 @@ export default function UpcomingMeetings() {
       fetchData();
     }
   };
+  const addNotification = async (
+      category,
+      content,
+      time,
+      id,
+      approved
+    ) => {
+      const notif = {
+        Category: category,
+        Content: content,
+        Time: time,
+        id: id,
+        Approved: approved,
+      };
+  
+      const { error } = await supabase.from("Notifications").insert([notif]);
+    };
+
+  const handleUnregister = async (meetingTopic, meetingdate, attendees, removedUserName) => {
+      setLoading(true);
+  
+      // removedUserName = `${curUser["First Name"]} ${curUser["Last Name"]}`;
+
+      if (!attendees.includes(removedUserName)) {
+        alert("This member is not registered for this meeting!");
+        setLoading(false);
+        return;
+      }
+  
+      // Filter out the current user from the attendees list
+      const updatedAttendees = attendees.filter(
+        (name) => name !== removedUserName
+      );
+  
+      const { error } = await supabase
+        .from("Meetings")
+        .update({ Attendees: updatedAttendees })
+        .eq("Topic", meetingTopic);
+  
+      if (!error) {
+        fetchData();
+        toast.success("Successfully unregistered " + removedUserName + " from " + meetingTopic);
+        addNotification(
+          "Un-registers",
+          `Admin unregistered ${removedUserName} 
+          from ${meetingTopic} on ${formatDate(meetingdate)}`,
+          new Date(),
+          Math.floor(Math.random() * 1000000000000000),
+          true
+        );
+      } else {
+        alert("Failed to unregister from meeting.");
+      }
+  
+      setLoading(false);
+    };
 
   const handleDeleteMeeting = async (topic, date) => {
     const { error } = await supabase
@@ -217,9 +273,30 @@ export default function UpcomingMeetings() {
                       <TableRow key={row.id || Math.random() * 10}>
                         <TableCell>{row.Topic}</TableCell>
                         <TableCell>{formatDate(row.Date)}</TableCell>
+
                         <TableCell>
-                          {(row.Attendees || []).join(", ")}
+                         <div className="flex flex-wrap gap-2">
+                            {(row.Attendees || []).map((name) => (
+                              <div key={name} className="flex items-center gap-1 bg-gray-100 rounded px-2 py-1">
+                                <span className="text-sm">{name}</span>
+                                <Button
+                                  variant="ghost"
+                                  size="sm"
+                                  onClick={() =>
+                                    handleUnregister(row.Topic, row.Date, row.Attendees, name)
+                                  }
+                                  className="text-gray-500 hover:text-red-700 h-5 w-5 p-0"
+                                >
+                                  <Trash2 className="h-3 w-3" />
+                                </Button>
+                              </div>
+                            ))}
+                            {(row.Attendees || []).length === 0 && (
+                              <span className="text-gray-500 text-sm">No attendees</span>
+                            )}
+                          </div>
                         </TableCell>
+
                         <TableCell>
                           <Button
                             variant="ghost"
@@ -231,6 +308,7 @@ export default function UpcomingMeetings() {
                           >
                             <Trash2 className="h-5 w-5" />
                           </Button>
+                        
                         </TableCell>
                       </TableRow>
                     ))}
