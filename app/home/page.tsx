@@ -1175,12 +1175,12 @@ const Home: React.FC = () => {
 
                           return (
                             <li
-                              key={meeting.Topic}
+                              key={extractTopicFromTopic(meeting.Topic)}
                               className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3 p-4 bg-gray-50 rounded-lg"
                             >
                               <div>
                                 <h3 className="font-bold text-sm sm:text-base">
-                                  {meeting.Topic}
+                                  {extractTopicFromTopic(meeting.Topic)}
                                 </h3>
                                 <p className="text-xs sm:text-sm text-gray-500">
                                   {formatDate(new Date(meeting.Date))}
