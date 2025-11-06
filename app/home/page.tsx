@@ -551,7 +551,7 @@ const Home: React.FC = () => {
       toast.error("Failed to submit transfer request");
     }
   };
-  const removeTransfer = async (id: String) => {
+  const removeTransfer = async (id: string) => {
     try {
       const { error } = await supabase
         .from("Notifications")
