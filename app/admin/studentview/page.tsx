@@ -423,12 +423,28 @@ const AdminStudentView = () => {
       toast.success("Transfer request submitted!");
       setShowTransferDialog(false);
       setTransferRequest({ source: "Cash", destination: "Cash", amount: 0 });
+      await fetchTransfers(curUser);
     } catch (error) {
       console.error("Transfer request error:", error);
       toast.error("Failed to submit transfer request");
     }
   };
+  const removeTransfer = async (id: string) => {
+    try {
+      const { error } = await supabase
+        .from("Notifications")
+        .delete()
+        .eq("id", id);
 
+      if (error) throw error;
+
+      toast.success("Transfer request removed!");
+      await fetchTransfers(curUser);
+    } catch (error) {
+      console.error("Remove transfer error:", error);
+      toast.error("Failed to remove transfer request");
+    }
+  };
   if (loading) {
     return (
       <div className="flex items-center justify-center min-h-screen">
@@ -1226,6 +1242,7 @@ const AdminStudentView = () => {
                                       {t.amount !== null ? `${t.amount.toFixed(2)} Pelicoin` : "—"}
                                     </span>
                                   </div>
+                                  <Button onClick={() => removeTransfer(t.id)}>Remove</Button>
                                 </li>
                               ))}
                             </ul>
