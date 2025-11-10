@@ -1319,7 +1319,7 @@ const Home: React.FC = () => {
                                 {t.amount !== null ? `${t.amount.toFixed(2)} Pelicoin` : "—"}
                               </span>
                             </div>
-                            <Button onClick={() => removeTransfer(t.id)}>Remove</Button>
+                            <Button onClick={() => removeTransfer(t.id)}>Cancel Request</Button>
                           </li>
                         ))}                        
                       </ul>
