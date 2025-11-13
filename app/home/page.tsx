@@ -551,6 +551,22 @@ const Home: React.FC = () => {
       toast.error("Failed to submit transfer request");
     }
   };
+  const removeTransfer = async (id: string) => {
+    try {
+      const { error } = await supabase
+        .from("Notifications")
+        .delete()
+        .eq("id", id);
+
+      if (error) throw error;
+
+      toast.success("Transfer request removed!");
+      await fetchTransfers(curUser);
+    } catch (error) {
+      console.error("Remove transfer error:", error);
+      toast.error("Failed to remove transfer request");
+    }
+  };
 
   // Show loading state
   if (loading) {
@@ -1303,8 +1319,9 @@ const Home: React.FC = () => {
                                 {t.amount !== null ? `${t.amount.toFixed(2)} Pelicoin` : "—"}
                               </span>
                             </div>
+                            <Button onClick={() => removeTransfer(t.id)}>Cancel Request</Button>
                           </li>
-                        ))}
+                        ))}                        
                       </ul>
                     ) : (
                       <p className="text-sm text-gray-500">No transfer requests yet.</p>
