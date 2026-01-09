@@ -1110,6 +1110,7 @@ const AdminStudentView = () => {
                                   curUser["First Name"] + " " + curUser["Last Name"]
                                 );
                                 const isFull = ((meeting.Attendees?.length || 0)) >= meetingMax;
+                                const isClosed = new Date(meeting.Date) <= new Date(Date.now() + 86400000); // 1 hour before meeting
       
                                 return (
                                   <li
@@ -1146,7 +1147,7 @@ const AdminStudentView = () => {
                                     ) : (
                                       <Button
                                         className="w-full sm:w-auto"
-                                        disabled={loading || isFull}
+                                        disabled={loading || isClosed}
                                         // // onClick={() =>
                                         // //   handleSignUp(
                                         // //     meeting.Topic,
@@ -1155,7 +1156,7 @@ const AdminStudentView = () => {
                                         // //   )
                                         // }
                                       >
-                                        {isFull ? "Full" : "Sign Up"}
+                                         {isClosed ? "Closed" : isFull ? "Join Waitlist" : "Sign Up"}
                                       </Button>
                                     )}
                                   </li>

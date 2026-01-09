@@ -128,7 +128,7 @@ const Home: React.FC = () => {
       .select()
       .order("Date", { ascending: true });
     if (!error) {
-      console.log("Fetched meetings:", data);
+      console.log("Fetched meetings.");
       setMeetings(data || []);
     } else {
       console.error("Error fetching meetings:", error);
@@ -297,7 +297,7 @@ const Home: React.FC = () => {
 
   const handleSignUp = async (
     meetingTopic: string,
-    attendees: string[],
+    attendees: string[], // need parameter for waitlist members
     meetingdate: any
   ) => {
     setLoading(true);
@@ -305,8 +305,10 @@ const Home: React.FC = () => {
     const maxStudents = extractMaxFromTopic(meetingTopic);
 
     // Check if meeting is full
+    // if meeting is full & meeting date is before 24 hours, add to waitlist
     if ((attendees.length || 0 ) >= maxStudents) {
       toast.error("This meeting is full!");
+
       setLoading(false);
       return;
     }
@@ -1188,6 +1190,7 @@ const Home: React.FC = () => {
                             curUser["First Name"] + " " + curUser["Last Name"]
                           );
                           const isFull = (meeting.Attendees?.length || 0) >= meetingMax;
+                          const isClosed = new Date(meeting.Date) <= new Date(Date.now() + 86400000); // 1 hour before meeting
 
                           return (
                             <li
@@ -1224,7 +1227,7 @@ const Home: React.FC = () => {
                               ) : (
                                 <Button
                                   className="w-full sm:w-auto"
-                                  disabled={loading || isFull}
+                                  disabled={loading || isClosed}
                                   onClick={() =>
                                     handleSignUp(
                                       meeting.Topic,
@@ -1233,7 +1236,7 @@ const Home: React.FC = () => {
                                     )
                                   }
                                 >
-                                  {isFull ? "Full" : "Sign Up"}
+                                  {isClosed ? isFull ? "Join Waitlist" : "Closed" : "Sign Up"}
                                 </Button>
                               )}
                             </li>
