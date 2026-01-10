@@ -1190,7 +1190,7 @@ const Home: React.FC = () => {
                             curUser["First Name"] + " " + curUser["Last Name"]
                           );
                           const isFull = (meeting.Attendees?.length || 0) >= meetingMax;
-                          const isClosed = new Date(meeting.Date) <= new Date(Date.now() + 86400000); // 1 hour before meeting
+                          const isClosed = new Date(meeting.Date) <= new Date(Date.now() + 86400000); // 1 day before meeting
 
                           return (
                             <li
@@ -1236,7 +1236,9 @@ const Home: React.FC = () => {
                                     )
                                   }
                                 >
-                                  {isClosed ? isFull ? "Join Waitlist" : "Closed" : "Sign Up"}
+                                  {isClosed ? "Closed" 
+                                  : isFull ? "Join Waitlist" 
+                                  : "Sign Up"}
                                 </Button>
                               )}
                             </li>

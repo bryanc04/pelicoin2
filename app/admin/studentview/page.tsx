@@ -1110,7 +1110,7 @@ const AdminStudentView = () => {
                                   curUser["First Name"] + " " + curUser["Last Name"]
                                 );
                                 const isFull = ((meeting.Attendees?.length || 0)) >= meetingMax;
-                                const isClosed = new Date(meeting.Date) <= new Date(Date.now() + 86400000); // 1 hour before meeting
+                                const isClosed = new Date(meeting.Date) <= new Date(Date.now() + 86400000); // 1 day before meeting
       
                                 return (
                                   <li
@@ -1156,7 +1156,9 @@ const AdminStudentView = () => {
                                         // //   )
                                         // }
                                       >
-                                         {isClosed ? "Closed" : isFull ? "Join Waitlist" : "Sign Up"}
+                                         {isClosed ? "Closed" 
+                                         : isFull ? "Waitlist" 
+                                         : "Sign Up"}
                                       </Button>
                                     )}
                                   </li>
