@@ -361,49 +361,64 @@ const Home: React.FC = () => {
     }
     setLoading(false);
   };
-  
+
   // New function to handle unregistering from meetings
   const handleUnregister = async (
     meetingTopic: string,
     attendees: string[],
+    waitlist: string[],
     meetingdate: string
   ) => {
     setLoading(true);
 
     const currentUserName = `${curUser["First Name"]} ${curUser["Last Name"]}`;
 
-    if (!attendees.includes(currentUserName)) {
+    if (!attendees.includes(currentUserName) && !waitlist.includes(currentUserName)) {
       alert("You are not registered for this meeting!");
       setLoading(false);
       return;
     }
 
     // Filter out the current user from the attendees list
-    const updatedAttendees = attendees.filter(
-      (name) => name !== currentUserName
-    );
-
-    const { error } = await supabase
+    if (attendees.includes(currentUserName)) {
+      const updatedAttendees = attendees.filter(
+        (name) => name !== currentUserName
+      );
+      const { error } = await supabase
       .from("Meetings")
       .update({ Attendees: updatedAttendees })
       .eq("Topic", meetingTopic);
-
-    if (!error) {
       fetchMeetings();
       toast.success("Succesfully unregistered from " + meetingTopic);
       addNotification(
         "Un-registers",
         `${curUser["First Name"]} ${
           curUser["Last Name"]
-        } unregistered up from ${meetingTopic} on ${formatDate(meetingdate)}`,
+        } unregistered from ${meetingTopic} on ${formatDate(meetingdate)}`,
         new Date(),
         Math.floor(Math.random() * 1000000000000000),
         true
       );
     } else {
-      alert("Failed to unregister from meeting.");
+      const updatedAttendees = waitlist.filter(
+        (name) => name !== currentUserName
+      );
+      const { error } = await supabase
+      .from("Meetings")
+      .update({ Waitlist: updatedAttendees })
+      .eq("Topic", meetingTopic);
+      fetchMeetings();
+      toast.success("Succesfully unregistered from " + meetingTopic);
+      addNotification(
+        "Un-registers",
+        `${curUser["First Name"]} ${
+          curUser["Last Name"]
+        } unregistered from the waitlist of ${meetingTopic} on ${formatDate(meetingdate)}`,
+        new Date(),
+        Math.floor(Math.random() * 1000000000000000),
+        true
+      );
     }
-
     setLoading(false);
   };
 
@@ -1199,9 +1214,8 @@ const Home: React.FC = () => {
                       <ul className="space-y-4">
                         {meetings.map((meeting) => {
                           const meetingMax = extractMaxFromTopic(meeting.Topic);
-                          const isRegistered = meeting.Attendees?.includes(
-                            curUser["First Name"] + " " + curUser["Last Name"]
-                          );
+                          const isRegistered = meeting.Attendees?.includes(curUser["First Name"] + " " + curUser["Last Name"])
+                           || meeting.Waitlist?.includes(curUser["First Name"] + " " + curUser["Last Name"]);
                           const isFull = (meeting.Attendees?.length || 0) >= meetingMax;
                           const isClosed = new Date(meeting.Date) <= new Date(Date.now() + 86400000); // 1 day before meeting
 
@@ -1234,6 +1248,7 @@ const Home: React.FC = () => {
                                     handleUnregister(
                                       meeting.Topic,
                                       meeting.Attendees || [],
+                                      meeting.Waitlist || [],
                                       meeting.Date
                                     )
                                   }

@@ -472,44 +472,69 @@ const handleSignUp = async (
 const handleUnregister = async (
     meetingTopic: string,
     attendees: string[],
+    waitlist: string[],
     meetingdate: string
   ) => {
     setLoading(true);
 
     const currentUserName = `${studentData["First Name"]} ${studentData["Last Name"]}`;
 
-    if (!attendees.includes(currentUserName)) {
+    if (!attendees.includes(currentUserName) && !waitlist.includes(currentUserName)) {
       alert("You are not registered for this meeting!");
       setLoading(false);
       return;
     }
 
-    // Filter out the current user from the attendees list
-    const updatedAttendees = attendees.filter(
-      (name) => name !== currentUserName
-    );
+    if (attendees.includes(currentUserName)) {
+      const updatedAttendees = attendees.filter(
+        (name) => name !== currentUserName
+      );
+      const { error } = await supabase
+        .from("Meetings")
+        .update({ Attendees: updatedAttendees })
+        .eq("Topic", meetingTopic);
 
-    const { error } = await supabase
+      if (!error) {
+        fetchMeetings();
+        toast.success("Succesfully unregistered from " + meetingTopic);
+        addNotification(
+          "Un-registers",
+          `${studentData["First Name"]} ${
+            studentData["Last Name"]
+          } unregistered up from ${meetingTopic} on ${formatDate(meetingdate)}`,
+          new Date(),
+          Math.floor(Math.random() * 1000000000000000),
+          true
+        );
+        } else {
+          alert("Failed to unregister from meeting.");
+        } 
+    } else {
+      const updatedAttendees = waitlist.filter(
+      (name) => name !== currentUserName
+      );
+
+      const { error } = await supabase
       .from("Meetings")
-      .update({ Attendees: updatedAttendees })
+      .update({ Waitlist: updatedAttendees })
       .eq("Topic", meetingTopic);
 
-    if (!error) {
-      fetchMeetings();
-      toast.success("Succesfully unregistered from " + meetingTopic);
-      addNotification(
-        "Un-registers",
-        `${studentData["First Name"]} ${
-          studentData["Last Name"]
-        } unregistered up from ${meetingTopic} on ${formatDate(meetingdate)}`,
-        new Date(),
-        Math.floor(Math.random() * 1000000000000000),
-        true
-      );
-    } else {
-      alert("Failed to unregister from meeting.");
+      if (!error) {
+        fetchMeetings();
+        toast.success("Succesfully unregistered from " + meetingTopic);
+        addNotification(
+          "Un-registers",
+          `${studentData["First Name"]} ${
+            studentData["Last Name"]
+          } unregistered from the waitlist of ${meetingTopic} on ${formatDate(meetingdate)}`,
+          new Date(),
+          Math.floor(Math.random() * 1000000000000000),
+          true
+        );
+        } else {
+          alert("Failed to unregister from meeting.");
+        } 
     }
-
     setLoading(false);
   };
   const handleTransfer = async () => {
@@ -1218,9 +1243,9 @@ const handleUnregister = async (
                             <ul className="space-y-4">
                               {meetings.map((meeting) => {
                                 const meetingMax = extractMaxFromTopic(meeting.Topic);
-                                const isRegistered = meeting.Attendees?.includes(
-                                  curUser["First Name"] + " " + curUser["Last Name"]
-                                );
+                                const isRegistered = meeting.Attendees?.includes(curUser["First Name"] + " " + curUser["Last Name"])
+                                || meeting.Waitlist?.includes(curUser["First Name"] + " " + curUser["Last Name"]);
+
                                 const isFull = ((meeting.Attendees?.length || 0)) >= meetingMax;
                                 const isClosed = new Date(meeting.Date) <= new Date(Date.now() + 86400000); // 1 day before meeting
       
@@ -1253,6 +1278,7 @@ const handleUnregister = async (
                                           handleUnregister(
                                             meeting.Topic,
                                             meeting.Attendees || [],
+                                            meeting.Waitlist || [],
                                             meeting.Date
                                           )
                                         }
