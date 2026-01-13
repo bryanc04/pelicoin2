@@ -45,6 +45,7 @@ import {
 } from "@/components/ui/popover";
 import { cn } from "@/lib/utils";
 import { Analytics } from "@vercel/analytics/react";
+import emailjs from "@emailjs/browser";
 
 ChartJS.register(ArcElement, Tooltip, Legend);
 
@@ -105,6 +106,8 @@ const AdminStudentView = () => {
 
   const [transfers, setTransfers] = useState<TransferCardRow[]>([]);
   const [transfersLoading, setTransfersLoading] = useState(false);
+
+  useEffect(() => emailjs.init("D6aKMxno3vr0IgN3e"), []);
 
   useEffect(() => {
     const checkMobile = () => {
@@ -485,58 +488,132 @@ const handleUnregister = async (
       return;
     }
 
+    let successfulUnregister = false;
+    let removedFrom: "attendees" | "waitlist" | null = null;
+    let updatedAttendeesAfterUnregister = attendees;
+    let updatedWaitlistAfterUnregister = waitlist;
+
+    // Filter out the current user from the attendees list
     if (attendees.includes(currentUserName)) {
       const updatedAttendees = attendees.filter(
         (name) => name !== currentUserName
       );
-      const { error } = await supabase
-        .from("Meetings")
-        .update({ Attendees: updatedAttendees })
-        .eq("Topic", meetingTopic);
 
-      if (!error) {
-        fetchMeetings();
-        toast.success("Succesfully unregistered from " + meetingTopic);
-        addNotification(
-          "Un-registers",
-          `${studentData["First Name"]} ${
-            studentData["Last Name"]
-          } unregistered up from ${meetingTopic} on ${formatDate(meetingdate)}`,
-          new Date(),
-          Math.floor(Math.random() * 1000000000000000),
-          true
-        );
-        } else {
-          alert("Failed to unregister from meeting.");
-        } 
-    } else {
-      const updatedAttendees = waitlist.filter(
-      (name) => name !== currentUserName
-      );
+      updatedAttendeesAfterUnregister = updatedAttendees;
+      updatedWaitlistAfterUnregister = waitlist;
+      removedFrom = "attendees";
 
       const { error } = await supabase
       .from("Meetings")
-      .update({ Waitlist: updatedAttendees })
+      .update({ Attendees: updatedAttendees })
+      .eq("Topic", meetingTopic);
+      fetchMeetings();
+      toast.success("Succesfully unregistered from " + meetingTopic);
+      successfulUnregister = true;
+      addNotification(
+        "Un-registers",
+        `${studentData["First Name"]} ${
+          studentData["Last Name"]
+        } unregistered from ${meetingTopic} on ${formatDate(meetingdate)}`,
+        new Date(),
+        Math.floor(Math.random() * 1000000000000000),
+        true
+      );
+    } else {
+      const updatedWaitlist = waitlist.filter(
+        (name) => name !== currentUserName
+      );
+
+      updatedAttendeesAfterUnregister = attendees;
+      updatedWaitlistAfterUnregister = updatedWaitlist;
+      removedFrom = "waitlist";
+
+      const { error } = await supabase
+      .from("Meetings")
+      .update({ Waitlist: updatedWaitlist })
+      .eq("Topic", meetingTopic);
+      fetchMeetings();
+      toast.success("Succesfully unregistered from " + meetingTopic);
+      successfulUnregister = true;
+      addNotification(
+        "Un-registers",
+        `${studentData["First Name"]} ${
+          studentData["Last Name"]
+        } unregistered from the waitlist of ${meetingTopic} on ${formatDate(meetingdate)}`,
+        new Date(),
+        Math.floor(Math.random() * 1000000000000000),
+        true
+      );
+    }
+
+    if(removedFrom === "attendees" && updatedWaitlistAfterUnregister.length > 0){
+      const bumpedPerson = updatedWaitlistAfterUnregister[0];
+      const newWaitlist = updatedWaitlistAfterUnregister.slice(1);
+      const newAttendees = [...updatedAttendeesAfterUnregister, bumpedPerson];
+
+      const { error: bumpError } = await supabase
+      .from("Meetings")
+      .update({ Attendees: newAttendees, Waitlist: newWaitlist })
       .eq("Topic", meetingTopic);
 
-      if (!error) {
-        fetchMeetings();
-        toast.success("Succesfully unregistered from " + meetingTopic);
+      if (bumpError) {
+        console.error(bumpError);
+      } else {
+        toast.success(`Someone on the waitlist was moved into attendees.`);
         addNotification(
-          "Un-registers",
-          `${studentData["First Name"]} ${
-            studentData["Last Name"]
-          } unregistered from the waitlist of ${meetingTopic} on ${formatDate(meetingdate)}`,
+          "Student Sign Ups",
+          `${bumpedPerson} was moved from the waitlist to attendees for ${meetingTopic} on ${formatDate(meetingdate)}`,
           new Date(),
           Math.floor(Math.random() * 1000000000000000),
           true
         );
-        } else {
-          alert("Failed to unregister from meeting.");
-        } 
+        fetchMeetings();
+      }
+
+      const parts = bumpedPerson.trim().toLowerCase().split(/\s+/).filter(Boolean);
+      const first = parts[0] || "";
+      const last = parts[parts.length - 1] || "";
+      const bumpedEmail = `purplegreen558@gmail.com`;
+
+      const SERVICE_ID = "service_51uk45n";
+      const TEMPLATE_ID = "template_d6qa8et"; 
+
+      try {
+        await emailjs.send(
+          SERVICE_ID,
+          TEMPLATE_ID,
+          {
+            name: bumpedPerson,
+            recipient: bumpedEmail,
+            meetingTopic: meetingTopic,
+            meetingdate: formatDate(meetingdate),
+          }
+        );
+        toast.success("Waitlisted person has been notified by email.");
+        addNotification(
+          "Student Sign Ups",
+          `${bumpedPerson} emailed about their promotion from waitlist to attendees for ${meetingTopic} on ${formatDate(meetingdate)}, but email failed to send`,
+          new Date(),
+          Math.floor(Math.random() * 1000000000000000),
+          true
+        );
+      } catch (err) {
+        console.log(err);
+        toast.error("Person was promoted, but email failed to send.");
+        addNotification(
+          "Student Sign Ups",
+          `${bumpedPerson} was moved from the waitlist to attendees for ${meetingTopic} on ${formatDate(meetingdate)}, but email failed to send`,
+          new Date(),
+          Math.floor(Math.random() * 1000000000000000),
+          true
+        );
+      }
+
     }
+
     setLoading(false);
   };
+
   const handleTransfer = async () => {
     if (!transferRequest.amount || transferRequest.amount <= 0) {
       toast.error("Please enter a valid amount");
@@ -1245,7 +1322,7 @@ const handleUnregister = async (
                                 const meetingMax = extractMaxFromTopic(meeting.Topic);
                                 const isRegistered = meeting.Attendees?.includes(curUser["First Name"] + " " + curUser["Last Name"])
                                 || meeting.Waitlist?.includes(curUser["First Name"] + " " + curUser["Last Name"]);
-
+                                const isOnWaitlist = meeting.Waitlist?.includes(curUser["First Name"] + " " + curUser["Last Name"]);
                                 const isFull = ((meeting.Attendees?.length || 0)) >= meetingMax;
                                 const isClosed = new Date(meeting.Date) <= new Date(Date.now() + 86400000); // 1 day before meeting
       
@@ -1268,12 +1345,16 @@ const handleUnregister = async (
                                       <p className="text-xs text-gray-500 mt-1">
                                         {meeting.Waitlist?.length || 0} on waitlist
                                       </p>
+                                      {isOnWaitlist ? (<p className="text-xs text-gray-500 mt-1">
+                                        Your position on the waitlist: 
+                                        {(meeting.Waitlist?.indexOf(curUser["First Name"] + " " + curUser["Last Name"]) ?? -2) + 1}
+                                      </p>) : null}
                                     </div>
                                     {isRegistered ? (
                                       <Button
                                         variant="outline"
                                         className="w-full sm:w-auto bg-red-50 hover:bg-red-100 text-red-600 border-red-300"
-                                        disabled={loading}
+                                        disabled={loading || isClosed}
                                         onClick={() =>
                                           handleUnregister(
                                             meeting.Topic,
@@ -1283,7 +1364,7 @@ const handleUnregister = async (
                                           )
                                         }
                                       >
-                                        Unregister
+                                        {isClosed ? "Closed" : isOnWaitlist ? "Unregister from Waitlist" : "Unregister"}
                                       </Button>
                                     ) : (
                                       <Button

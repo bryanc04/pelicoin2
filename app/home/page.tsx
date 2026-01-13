@@ -96,6 +96,9 @@ const Home: React.FC = () => {
   const [transfers, setTransfers] = useState<TransferCardRow[]>([]);
   const [transfersLoading, setTransfersLoading] = useState(false);
 
+  useEffect(() => emailjs.init("D6aKMxno3vr0IgN3e"), []);
+
+
   // Add mobile detection
   useEffect(() => {
     const checkMobile = () => {
@@ -453,7 +456,7 @@ const Home: React.FC = () => {
       } else {
         toast.success(`Someone on the waitlist was moved into attendees.`);
         addNotification(
-          "Waitlist Promotion",
+          "Student Sign Ups",
           `${bumpedPerson} was moved from the waitlist to attendees for ${meetingTopic} on ${formatDate(meetingdate)}`,
           new Date(),
           Math.floor(Math.random() * 1000000000000000),
@@ -465,11 +468,12 @@ const Home: React.FC = () => {
       const parts = bumpedPerson.trim().toLowerCase().split(/\s+/).filter(Boolean);
       const first = parts[0] || "";
       const last = parts[parts.length - 1] || "";
-      const bumpedEmail = `${first}_${last}@loomis.org`;
+      const bumpedEmail = `purplegreen558@gmail.com`;
 
       const SERVICE_ID = "service_51uk45n";
       const TEMPLATE_ID = "template_d6qa8et"; 
-
+      
+    
       try {
         await emailjs.send(
           SERVICE_ID,
@@ -479,12 +483,26 @@ const Home: React.FC = () => {
             recipient: bumpedEmail,
             meetingTopic: meetingTopic,
             meetingdate: formatDate(meetingdate),
-          }
+          } 
         );
         toast.success("Waitlisted person has been notified by email.");
+        addNotification(
+          "Student Sign Ups",
+          `${bumpedPerson} emailed about their promotion from waitlist to attendees for ${meetingTopic} on ${formatDate(meetingdate)}, but email failed to send`,
+          new Date(),
+          Math.floor(Math.random() * 1000000000000000),
+          true
+        );
       } catch (err) {
         console.log(err);
         toast.error("Person was promoted, but email failed to send.");
+        addNotification(
+          "Student Sign Ups",
+          `${bumpedPerson} was moved from the waitlist to attendees for ${meetingTopic} on ${formatDate(meetingdate)}, but email failed to send`,
+          new Date(),
+          Math.floor(Math.random() * 1000000000000000),
+          true
+        );
       }
 
     }
@@ -1288,7 +1306,7 @@ const Home: React.FC = () => {
                            || meeting.Waitlist?.includes(curUser["First Name"] + " " + curUser["Last Name"]);
                           const isFull = (meeting.Attendees?.length || 0) >= meetingMax;
                           const isClosed = new Date(meeting.Date) <= new Date(Date.now() + 86400000); // 1 day before meeting
-
+                          const isOnWaitlist = meeting.Waitlist?.includes(curUser["First Name"] + " " + curUser["Last Name"]);
                           return (
                             <li
                               key={extractTopicFromTopic(meeting.Topic)}
@@ -1308,12 +1326,16 @@ const Home: React.FC = () => {
                                 <p className="text-xs text-gray-500 mt-1">
                                   {meeting.Waitlist?.length || 0} people on waitlist
                                 </p>
+                                {isOnWaitlist ? (<p className="text-xs text-gray-500 mt-1">
+                                  Your position on the waitlist: 
+                                  {(meeting.Waitlist?.indexOf(curUser["First Name"] + " " + curUser["Last Name"]) ?? -2) + 1}
+                                  </p>) : null}
                               </div>
                               {isRegistered ? (
                                 <Button
                                   variant="outline"
                                   className="w-full sm:w-auto bg-red-50 hover:bg-red-100 text-red-600 border-red-300"
-                                  disabled={loading}
+                                  disabled={loading || isClosed}
                                   onClick={() =>
                                     handleUnregister(
                                       meeting.Topic,
@@ -1323,7 +1345,7 @@ const Home: React.FC = () => {
                                     )
                                   }
                                 >
-                                  Unregister
+                                  {isClosed ? "Closed" : isOnWaitlist ? "Unregister from Waitlist" : "Unregister"}
                                 </Button>
                               ) : (
                                 <Button
