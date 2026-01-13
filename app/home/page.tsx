@@ -30,6 +30,7 @@ import { Label } from "@/components/ui/label";
 import { Analytics } from "@vercel/analytics/react";
 import { isAdminEmail } from '../../lib/utils/adminEmails';
 import { max } from "date-fns";
+import emailjs from "@emailjs/browser";
 
 ChartJS.register(ArcElement, Tooltip, Legend);
 
