@@ -379,17 +379,28 @@ const Home: React.FC = () => {
       return;
     }
 
+    let successfulUnregister = false;
+    let removedFrom: "attendees" | "waitlist" | null = null;
+    let updatedAttendeesAfterUnregister = attendees;
+    let updatedWaitlistAfterUnregister = waitlist;
+
     // Filter out the current user from the attendees list
     if (attendees.includes(currentUserName)) {
       const updatedAttendees = attendees.filter(
         (name) => name !== currentUserName
       );
+
+      updatedAttendeesAfterUnregister = updatedAttendees;
+      updatedWaitlistAfterUnregister = waitlist;
+      removedFrom = "attendees";
+
       const { error } = await supabase
       .from("Meetings")
       .update({ Attendees: updatedAttendees })
       .eq("Topic", meetingTopic);
       fetchMeetings();
       toast.success("Succesfully unregistered from " + meetingTopic);
+      successfulUnregister = true;
       addNotification(
         "Un-registers",
         `${curUser["First Name"]} ${
@@ -400,15 +411,21 @@ const Home: React.FC = () => {
         true
       );
     } else {
-      const updatedAttendees = waitlist.filter(
+      const updatedWaitlist = waitlist.filter(
         (name) => name !== currentUserName
       );
+
+      updatedAttendeesAfterUnregister = attendees;
+      updatedWaitlistAfterUnregister = updatedWaitlist;
+      removedFrom = "waitlist";
+
       const { error } = await supabase
       .from("Meetings")
-      .update({ Waitlist: updatedAttendees })
+      .update({ Waitlist: updatedWaitlist })
       .eq("Topic", meetingTopic);
       fetchMeetings();
       toast.success("Succesfully unregistered from " + meetingTopic);
+      successfulUnregister = true;
       addNotification(
         "Un-registers",
         `${curUser["First Name"]} ${
@@ -419,6 +436,58 @@ const Home: React.FC = () => {
         true
       );
     }
+
+    if(removedFrom === "attendees" && updatedWaitlistAfterUnregister.length > 0){
+      const bumpedPerson = updatedWaitlistAfterUnregister[0];
+      const newWaitlist = updatedWaitlistAfterUnregister.slice(1);
+      const newAttendees = [...updatedAttendeesAfterUnregister, bumpedPerson];
+
+      const { error: bumpError } = await supabase
+      .from("Meetings")
+      .update({ Attendees: newAttendees, Waitlist: newWaitlist })
+      .eq("Topic", meetingTopic);
+
+      if (bumpError) {
+        console.error(bumpError);
+      } else {
+        toast.success(`Someone on the waitlist was moved into attendees.`);
+        addNotification(
+          "Waitlist Promotion",
+          `${bumpedPerson} was moved from the waitlist to attendees for ${meetingTopic} on ${formatDate(meetingdate)}`,
+          new Date(),
+          Math.floor(Math.random() * 1000000000000000),
+          true
+        );
+        fetchMeetings();
+      }
+
+      const parts = bumpedPerson.trim().toLowerCase().split(/\s+/).filter(Boolean);
+      const first = parts[0] || "";
+      const last = parts[parts.length - 1] || "";
+      const bumpedEmail = `${first}_${last}@loomis.org`;
+
+      const SERVICE_ID = "service_51uk45n";
+      const TEMPLATE_ID = "template_d6qa8et"; 
+
+      try {
+        await emailjs.send(
+          SERVICE_ID,
+          TEMPLATE_ID,
+          {
+            name: bumpedPerson,
+            recipient: bumpedEmail,
+            meetingTopic: meetingTopic,
+            meetingdate: formatDate(meetingdate),
+          }
+        );
+        toast.success("Waitlisted person has been notified by email.");
+      } catch (err) {
+        console.log(err);
+        toast.error("Person was promoted, but email failed to send.");
+      }
+
+    }
+
     setLoading(false);
   };
 
