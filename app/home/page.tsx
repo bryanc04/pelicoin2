@@ -37,6 +37,7 @@ interface Meeting {
   Topic: string;
   Date: string;
   Attendees?: string[];
+  Waitlist?: string[];
 }
 
 interface ShopItem {
@@ -298,6 +299,7 @@ const Home: React.FC = () => {
   const handleSignUp = async (
     meetingTopic: string,
     attendees: string[], // need parameter for waitlist members
+    waitlist: string[],
     meetingdate: any
   ) => {
     setLoading(true);
@@ -306,32 +308,25 @@ const Home: React.FC = () => {
 
     // Check if meeting is full
     // if meeting is full & meeting date is before 24 hours, add to waitlist
-    if ((attendees.length || 0 ) >= maxStudents) {
-      toast.error("This meeting is full!");
+    
 
-      setLoading(false);
-      return;
-    }
-
-    if (
-      attendees.includes(curUser["First Name"] + " " + curUser["Last Name"])
-    ) {
+    if (attendees.includes(curUser["First Name"] + " " + curUser["Last Name"])) {
+      toast.error("Already signed up!");
       alert("Already signed up!");
       setLoading(false);
       return;
     }
 
-    const newAttendees = [
+    if ((attendees.length || 0 ) < maxStudents) {
+      const newAttendees = [
       ...attendees,
       `${curUser["First Name"]} ${curUser["Last Name"]}`,
-    ];
+    ]; 
+      const { error } = await supabase
+        .from("Meetings")
+        .update({ Attendees: newAttendees })
+        .eq("Topic", meetingTopic);
 
-    const { error } = await supabase
-      .from("Meetings")
-      .update({ Attendees: newAttendees })
-      .eq("Topic", meetingTopic);
-
-    if (!error) {
       fetchMeetings();
       toast.success("Sign Up Successful!");
       addNotification(
@@ -344,11 +339,29 @@ const Home: React.FC = () => {
         true
       );
     } else {
-      alert("Failed to sign up.");
+      const newAttendees = [
+        ...waitlist,
+        `${curUser["First Name"]} ${curUser["Last Name"]}`,
+      ]
+      const { error } = await supabase
+      .from("Meetings")
+      .update({ Waitlist: newAttendees })
+      .eq("Topic", meetingTopic);
+      fetchMeetings();
+    toast.success("Sign Up Successful!");
+    addNotification(
+      "Sign Ups",
+      `${curUser["First Name"]} ${
+        curUser["Last Name"]
+      } joined the waitlist for ${meetingTopic} on ${formatDate(meetingdate)}`,
+      new Date(),
+      Math.floor(Math.random() * 1000000000000000),
+      true
+    );
     }
     setLoading(false);
   };
-
+  
   // New function to handle unregistering from meetings
   const handleUnregister = async (
     meetingTopic: string,
@@ -1206,7 +1219,10 @@ const Home: React.FC = () => {
                                 </p>
                                 <p className="text-xs text-gray-500 mt-1">
                                   {meeting.Attendees?.length || 0}/{meetingMax} spots
-                                  filled
+                                  filled 
+                                </p>
+                                <p className="text-xs text-gray-500 mt-1">
+                                  {meeting.Waitlist?.length || 0} people on waitlist
                                 </p>
                               </div>
                               {isRegistered ? (
@@ -1232,6 +1248,7 @@ const Home: React.FC = () => {
                                     handleSignUp(
                                       meeting.Topic,
                                       meeting.Attendees || [],
+                                      meeting.Waitlist || [],
                                       meeting.Date
                                     )
                                   }

@@ -282,6 +282,7 @@ export default function UpcomingMeetings() {
                       <TableHead>Topic</TableHead>
                       <TableHead>Time</TableHead>
                       <TableHead>Attendees</TableHead>
+                      <TableHead>Waitlist</TableHead>
                       <TableHead>Max students</TableHead>
                       <TableHead>Actions</TableHead>
                     </TableRow>
@@ -311,6 +312,28 @@ export default function UpcomingMeetings() {
                             ))}
                             {(row.Attendees || []).length === 0 && (
                               <span className="text-gray-500 text-sm">No attendees</span>
+                            )}
+                          </div>
+                        </TableCell>
+                        <TableCell>
+                          <div className="flex flex-wrap gap-2">
+                            {(row.Waitlist || []).map((name) => (
+                              <div key={name} className="flex items-center gap-1 bg-gray-100 rounded px-2 py-1">
+                                <span className="text-sm">{name}</span>
+                                <Button
+                                  variant="ghost"
+                                  size="sm"
+                                  onClick={() =>
+                                    handleUnregister(row.Topic, row.Date, row.Waitlist, name)
+                                  }
+                                  className="text-gray-500 hover:text-red-700 h-5 w-5 p-0"
+                                >
+                                  <Trash2 className="h-3 w-3" />
+                                </Button>
+                              </div>
+                            ))}
+                            {(row.Waitlist || []).length === 0 && (
+                              <span className="text-gray-500 text-sm">No one on waitlist</span>
                             )}
                           </div>
                         </TableCell>
