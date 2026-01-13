@@ -147,6 +147,7 @@ export default function UpcomingMeetings() {
       Topic: topicWithMax,
       Date: combinedDateTime.toISOString(),
       Attendees: [],
+      Waitlist: [],
       id: Math.floor(Math.random() * 1000000000000000),
     };
     console.log(newMeeting);
