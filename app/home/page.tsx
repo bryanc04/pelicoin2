@@ -1335,7 +1335,7 @@ const Home: React.FC = () => {
                                 <Button
                                   variant="outline"
                                   className="w-full sm:w-auto bg-red-50 hover:bg-red-100 text-red-600 border-red-300"
-                                  disabled={loading || isClosed}
+                                  disabled={loading}
                                   onClick={() =>
                                     handleUnregister(
                                       meeting.Topic,
