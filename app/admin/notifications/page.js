@@ -118,51 +118,14 @@ export default function UpcomingMeetings() {
 
   const handleApproveTransfer = async (notification) => {
     try {
-      // Extract transfer details from notification content
-      const content = notification.Content;
-      const match = content.match(/transfer (\d+) Pelicoin from (.*) to (.*)/);
-      if (!match) {
-        toast.error("Invalid transfer request format");
-        return;
-      }
-
-      const [_, amount, source, destination] = match;
-      const studentName = content.split(" requested")[0];
-
-      // Get student's current balances
-      const { data: studentData, error: fetchError } = await supabase
-        .from("Pelicoin balances")
-        .select()
-        .ilike("Student", `%${studentName}%`);
-
-      if (fetchError || !studentData || studentData.length === 0) {
-        throw new Error("Student not found");
-      }
-
-      const student = studentData[0];
-      const currentSourceBalance = student[source];
-      const currentDestBalance = student[destination];
-
-      if (currentSourceBalance < parseFloat(amount)) {
-        toast.error("Insufficient funds in source account");
-        return;
-      }
-
-      // Update balances
-      const { error: updateError } = await supabase
-        .from("Pelicoin balances")
-        .update({
-          [source]: currentSourceBalance - parseFloat(amount),
-          [destination]: currentDestBalance + parseFloat(amount),
-        })
-        .eq("id", student.id);
-
-      if (updateError) throw updateError;
-
-      // Delete the notification
-      await supabase.from("Notifications").delete().eq("id", notification.id);
-
-      toast.success("Transfer approved successfully!");
+      const { error } = await supabase
+        .from("Notifications")
+        .update({ Approved: "true" })
+        .eq("id", notification.id);
+  
+      if (error) throw error;
+  
+      toast.success("Transfer approved!");
       fetchData();
     } catch (error) {
       console.error("Error approving transfer:", error);
@@ -294,7 +257,7 @@ export default function UpcomingMeetings() {
                       <Table>
                         <TableBody>
                           {data.map((row) =>
-                            row.Category == "Transfer Requests" ? (
+                            row.Category == "Transfer Requests" && row.Approved == "false" ? (
                               <TableRow key={row.id}>
                                 <TableCell>{row.Content}</TableCell>
                                 <TableCell>{formatDate(row.Time)}</TableCell>
@@ -323,6 +286,38 @@ export default function UpcomingMeetings() {
                         </TableBody>
                       </Table>
                     </AccordionContent>
+
+                    <AccordionItem value="item-5">
+                      <AccordionTrigger>Transfer History</AccordionTrigger>
+                      <AccordionContent>
+                        <Table>
+                          <TableBody>
+                            {data.map((row) =>
+                              row.Category === "Transfer Requests" ? (
+                                <TableRow key={row.id}>
+                                  <TableCell>{row.Content}</TableCell>
+                                  <TableCell>{formatDate(row.Time)}</TableCell>
+                                  <TableCell>
+                                    {row.Approved === "true" ? (
+                                      <span className="px-2 py-1 rounded bg-gray-200 text-gray-700 text-sm">
+                                        Approved
+                                      </span>
+                                    ) : (
+                                      <span className="px-2 py-1 rounded bg-yellow-100 text-yellow-800 text-sm">
+                                        Pending
+                                      </span>
+                                    )}
+                                  </TableCell>
+                                </TableRow>
+                              ) : (
+                                <></>
+                              )
+                            )}
+                          </TableBody>
+                        </Table>
+                      </AccordionContent>
+                    </AccordionItem>
+
                   </AccordionItem>
                 </Accordion>
               ) : (

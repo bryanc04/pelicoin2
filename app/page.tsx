@@ -55,10 +55,19 @@ export default function Home() {
 
     // Handle OAuth redirect
     const handleRedirect = async () => {
-      const { error } = await supabase.auth.getSession();
+      const { data, error } = await supabase.auth.getSession();
       if (error) {
         console.error("Error getting session:", error.message);
       }
+
+      const user = data.session?.user;
+      if (user) {
+        if (user.email === "linda_fisher@loomis.org") {
+          router.push("/admin");
+        } else {
+          router.push("/home");
+          }
+        }
     };
 
     handleRedirect();
@@ -171,8 +180,7 @@ export default function Home() {
       provider: "azure",
       options: {
         scopes: "email profile openid",
-        // You can add additional options like redirectTo if needed
-        // redirectTo: `${window.location.origin}/auth/callback`,
+        redirectTo: `${window.location.origin}/home`,
       },
     });
 
