@@ -399,7 +399,97 @@ const AdminStudentView = () => {
     const { error } = await supabase.from("Notifications").insert([notif]);
     if (error) throw error;
   };
+  const handleSignUp = async (
+    meetingTopic: string,
+    attendees: string[], // need parameter for waitlist members
+    meetingdate: any
+  ) => {
+    setLoading(true);
 
+    const maxStudents = extractMaxFromTopic(meetingTopic);
+
+    // Check if meeting is full
+    // if meeting is full & meeting date is before 24 hours, add to waitlist
+    
+
+    if (attendees.includes(studentData["First Name"] + " " + studentData["Last Name"])) {
+      toast.error("Already signed up!");
+      alert("Already signed up!");
+      setLoading(false);
+      return;
+    }
+
+    if ((attendees.length || 0 ) < maxStudents) {
+      const newAttendees = [
+      ...attendees,
+      `${studentData["First Name"]} ${studentData["Last Name"]}`,
+    ]; 
+      const { error } = await supabase
+        .from("Meetings")
+        .update({ Attendees: newAttendees })
+        .eq("Topic", meetingTopic);
+
+      fetchMeetings();
+      toast.success("Sign Up Successful!");
+      addNotification(
+        "Sign Ups",
+        `${studentData["First Name"]} ${
+          studentData["Last Name"]
+        } signed up for ${meetingTopic} on ${formatDate(meetingdate)}`,
+        new Date(),
+        Math.floor(Math.random() * 1000000000000000),
+        true
+      );
+    } 
+
+    
+
+    setLoading(false);
+  };
+
+const handleUnregister = async (
+    meetingTopic: string,
+    attendees: string[],
+    meetingdate: string
+  ) => {
+    setLoading(true);
+
+    const currentUserName = `${studentData["First Name"]} ${studentData["Last Name"]}`;
+
+    if (!attendees.includes(currentUserName)) {
+      alert("You are not registered for this meeting!");
+      setLoading(false);
+      return;
+    }
+
+
+    // Filter out the current user from the attendees list
+    if (attendees.includes(currentUserName)) {
+      const updatedAttendees = attendees.filter(
+        (name) => name !== currentUserName
+      );
+
+ 
+
+      const { error } = await supabase
+      .from("Meetings")
+      .update({ Attendees: updatedAttendees })
+      .eq("Topic", meetingTopic);
+      fetchMeetings();
+      toast.success("Succesfully unregistered from " + meetingTopic);
+      addNotification(
+        "Un-registers",
+        `${studentData["First Name"]} ${
+          studentData["Last Name"]
+        } unregistered from ${meetingTopic} on ${formatDate(meetingdate)}`,
+        new Date(),
+        Math.floor(Math.random() * 1000000000000000),
+        true
+      );
+    } 
+
+    setLoading(false);
+  };
   const handleTransfer = async () => {
     if (!transferRequest.amount || transferRequest.amount <= 0) {
       toast.error("Please enter a valid amount");
@@ -1133,13 +1223,13 @@ const AdminStudentView = () => {
                                         variant="outline"
                                         className="w-full sm:w-auto bg-red-50 hover:bg-red-100 text-red-600 border-red-300"
                                         disabled={loading}
-                                        // onClick={() =>
-                                        //   handleUnregister(
-                                        //     meeting.Topic,
-                                        //     meeting.Attendees || [],
-                                        //     meeting.Date
-                                        //   )
-                                        // }
+                                        onClick={() =>
+                                          handleUnregister(
+                                            meeting.Topic,
+                                            meeting.Attendees || [],
+                                            meeting.Date
+                                          )
+                                        }
                                       >
                                         Unregister
                                       </Button>
@@ -1147,13 +1237,13 @@ const AdminStudentView = () => {
                                       <Button
                                         className="w-full sm:w-auto"
                                         disabled={loading || isFull}
-                                        // // onClick={() =>
-                                        // //   handleSignUp(
-                                        // //     meeting.Topic,
-                                        // //     meeting.Attendees || [],
-                                        // //     meeting.Date
-                                        // //   )
-                                        // }
+                                        onClick={() =>
+                                          handleSignUp(
+                                            meeting.Topic,
+                                            meeting.Attendees || [],
+                                            meeting.Date
+                                          )
+                                        }
                                       >
                                         {isFull ? "Full" : "Sign Up"}
                                       </Button>
