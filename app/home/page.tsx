@@ -58,6 +58,7 @@ interface TransferCardRow {
   source: string;
   destination: string;
   created_at: string;
+  approved: string;
 }
 
 const Home: React.FC = () => {
@@ -420,21 +421,32 @@ const Home: React.FC = () => {
 
   const fetchTransfers = async (userLike: any) => {
     if (!userLike) return;
-    const fullName = `${userLike["First Name"]} ${userLike["Last Name"]}`.toLowerCase();
+  
+    const fullName =
+      `${userLike["First Name"]} ${userLike["Last Name"]}`.toLowerCase();
+  
     setTransfersLoading(true);
+  
     const { data, error } = await supabase
       .from("Notifications")
-      .select()
+      .select("*")
       .eq("Category", "Transfer Requests")
       .order("Time", { ascending: false });
+  
     if (error) {
       console.error("fetchTransfers error:", error);
       setTransfers([]);
       setTransfersLoading(false);
       return;
     }
+  
+    // Logs everything in the Notifications table to your localhost console
+    // console.log("All Notifications rows:", data);
+  
     const mine = (data || []).filter(
-      (n: any) => (n.Content || "").toLowerCase().startsWith(fullName)
+      (n: any) =>
+        n.Category === "Transfer Requests" &&
+        (n.Content || "").toLowerCase().startsWith(fullName)
     );
     const rows: TransferCardRow[] = mine.map((n: any) => {
       const content: string = n.Content || "";
@@ -448,6 +460,7 @@ const Home: React.FC = () => {
         source: m ? m[2] : "—",
         destination: m ? m[3] : "—",
         created_at: n.Time || new Date().toISOString(),
+        approved: n.Approved,
       };
     });
     setTransfers(rows);
@@ -1319,7 +1332,18 @@ const Home: React.FC = () => {
                                 {t.amount !== null ? `${t.amount.toFixed(2)} Pelicoin` : "—"}
                               </span>
                             </div>
-                            <Button onClick={() => removeTransfer(t.id)}>Cancel Request</Button>
+                            {t.approved === "true" ? (
+                              <Button
+                                disabled
+                                className="bg-gray-300 text-gray-600 cursor-not-allowed"
+                              >
+                                Approved
+                              </Button>
+                            ) : (
+                              <Button onClick={() => removeTransfer(t.id)}>
+                                Cancel Request
+                              </Button>
+                            )}
                           </li>
                         ))}                        
                       </ul>
