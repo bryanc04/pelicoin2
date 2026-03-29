@@ -6,6 +6,7 @@ import { Calendar as CalendarIcon, Clock, Trash2, Loader2 } from "lucide-react";
 import supabase from "../../supabaseClient";
 import { useRef, useEffect, useState } from "react";
 import { Button } from "@/components/ui/button";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
 import { Card, CardContent } from "@/components/ui/card";
 import {
   Table,
@@ -38,6 +39,7 @@ import {
 export default function UpcomingMeetings() {
   const [data, setData] = React.useState([]);
   const [loading, setLoading] = React.useState(true);
+  const [showApproveAllDialog, setShowApproveAllDialog] = useState(false);
 
   useEffect(() => emailjs.init("D6aKMxno3vr0IgN3e"), []);
 
@@ -115,6 +117,37 @@ export default function UpcomingMeetings() {
       timeZone: "America/New_York",
     });
   };
+
+  const handleApproveAllClick = () => {
+      setShowApproveAllDialog(true);
+    };
+
+  const handleApproveAllTransfers = async => {
+    try {
+
+        // check if there are any pending transfer requests, if not error out
+        // if there are, approve all of them by setting Approved to true where Category is Transfer Requests and Approved is false
+        if (data.some(row => row.Category === "Transfer Requests" && row.Approved === "false")) {
+            const { error } = await supabase            
+            .from("Notifications")
+            .update({ Approved: "true" })
+            .eq("Category", "Transfer Requests")
+            .eq("Approved", "false");
+        } else {
+          toast.error("No pending transfer requests to approve");
+          return;
+        }
+      
+      if (error) throw error;
+  
+      toast.success("All Transfers Approved!");
+      setShowApproveAllDialog(false);
+      fetchData();
+    } catch (error) {
+      console.error("Error approving transfers:", error);
+      toast.error("Failed to approve all transfers");
+    }
+  }
 
   const handleApproveTransfer = async (notification) => {
     try {
@@ -254,6 +287,13 @@ export default function UpcomingMeetings() {
                   <AccordionItem value="item-4">
                     <AccordionTrigger>Transfer Requests</AccordionTrigger>
                     <AccordionContent>
+                      <Button
+                        variant="outline"
+                        onClick={handleApproveAllClick}
+                        className="mr-2"
+                      >
+                        Approve All
+                      </Button>
                       <Table>
                         <TableBody>
                           {data.map((row) =>
@@ -320,6 +360,7 @@ export default function UpcomingMeetings() {
 
                   </AccordionItem>
                 </Accordion>
+                
               ) : (
                 <p className="text-muted-foreground text-center py-8">
                   No Notifications found.
@@ -329,6 +370,29 @@ export default function UpcomingMeetings() {
           </CardContent>
         </Card>
       </SidebarProvider>
+      {/* Purchase Confirmation Dialog */}
+        <Dialog open={showApproveAllDialog} onOpenChange={setShowApproveAllDialog}>
+          <DialogContent>
+            <DialogHeader>
+              <DialogTitle>Confirm Approve All</DialogTitle>
+            </DialogHeader>
+            <div className="py-4">
+              <p>Are you sure you want to approve all pending transfer requests?</p>
+            </div>
+            <DialogFooter>
+              <Button
+                variant="outline"
+                onClick={() => setShowApproveAllDialog(false)}
+              >
+                Cancel
+              </Button>
+              <Button type="module" onClick={() => handleApproveAllTransfers}>Confirm</Button>
+            </DialogFooter>
+          </DialogContent>
+        </Dialog>
+
     </div>
+
+
   );
 }
