@@ -230,7 +230,7 @@ const AdminStudentView = () => {
     setTransfersLoading(true);
     const { data, error } = await supabase
       .from("Notifications")
-      .select("id, Category, Content, Time")
+      .select("id, Category, Content, Time, Approved")
       .eq("Category", "Transfer Requests")
       .order("Time", { ascending: false });
     if (error) {
@@ -240,7 +240,9 @@ const AdminStudentView = () => {
       return;
     }
     const mine = (data || []).filter(
-      (n: any) => (n.Content || "").toLowerCase().startsWith(fullName)
+      (n: any) =>
+        n.Category === "Transfer Requests" &&
+        (n.Content || "").toLowerCase().startsWith(fullName)
     );
     const rows: TransferCardRow[] = mine.map((n: any) => {
       const content: string = n.Content || "";
