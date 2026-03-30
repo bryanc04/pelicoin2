@@ -2,7 +2,7 @@
 
 import React from "react";
 import { format } from "date-fns";
-import { Calendar as CalendarIcon, Clock, Trash2, Loader2 } from "lucide-react";
+import { Calendar as CalendarIcon, Clock, Trash2, RotateCcw, Loader2, Undo } from "lucide-react";
 import supabase from "../../supabaseClient";
 import { useRef, useEffect, useState } from "react";
 import { Button } from "@/components/ui/button";
@@ -36,7 +36,7 @@ import {
   AccordionTrigger,
 } from "@/components/ui/accordion";
 
-export default function UpcomingMeetings() {
+export default function Home() {
   const [data, setData] = React.useState([]);
   const [loading, setLoading] = React.useState(true);
   const [showApproveAllDialog, setShowApproveAllDialog] = useState(false);
@@ -122,7 +122,7 @@ export default function UpcomingMeetings() {
       setShowApproveAllDialog(true);
     };
 
-  const handleApproveAllTransfers = async => {
+  const handleApproveAllTransfers = async () => {
     try {
 
         // check if there are any pending transfer requests, if not error out
@@ -163,6 +163,23 @@ export default function UpcomingMeetings() {
     } catch (error) {
       console.error("Error approving transfer:", error);
       toast.error("Failed to approve transfer");
+    }
+  };
+
+  const handleUndoApproveTransfer = async (notification) => {
+    try {
+      const { error } = await supabase
+        .from("Notifications")
+        .update({ Approved: "false" })
+        .eq("id", notification.id);
+  
+      if (error) throw error;
+  
+      toast.success("Transfer approval undone!");
+      fetchData();
+    } catch (error) {
+      console.error("Error undoing transfer approval:", error);
+      toast.error("Failed to undo transfer approval");
     }
   };
 
@@ -326,38 +343,47 @@ export default function UpcomingMeetings() {
                         </TableBody>
                       </Table>
                     </AccordionContent>
-
-                    <AccordionItem value="item-5">
-                      <AccordionTrigger>Transfer History</AccordionTrigger>
-                      <AccordionContent>
-                        <Table>
-                          <TableBody>
-                            {data.map((row) =>
-                              row.Category === "Transfer Requests" ? (
-                                <TableRow key={row.id}>
-                                  <TableCell>{row.Content}</TableCell>
-                                  <TableCell>{formatDate(row.Time)}</TableCell>
-                                  <TableCell>
-                                    {row.Approved === "true" ? (
-                                      <span className="px-2 py-1 rounded bg-gray-200 text-gray-700 text-sm">
-                                        Approved
-                                      </span>
-                                    ) : (
-                                      <span className="px-2 py-1 rounded bg-yellow-100 text-yellow-800 text-sm">
-                                        Pending
-                                      </span>
-                                    )}
-                                  </TableCell>
-                                </TableRow>
-                              ) : (
-                                <></>
-                              )
-                            )}
-                          </TableBody>
-                        </Table>
-                      </AccordionContent>
-                    </AccordionItem>
-
+                  </AccordionItem>
+                  <AccordionItem value="item-5">
+                    <AccordionTrigger>Transfer History</AccordionTrigger>
+                    <AccordionContent>
+                      <Table>
+                        <TableBody>
+                          {data.map((row) =>
+                            row.Category === "Transfer Requests" ? (
+                              <TableRow key={row.id}>
+                                <TableCell>{row.Content}</TableCell>
+                                <TableCell>{formatDate(row.Time)}</TableCell>
+                                <TableCell>
+                                  {row.Approved === "true" ? (
+                                    <span className="px-2 py-1 rounded bg-gray-200 text-gray-700 text-sm">
+                                      Approved
+                                    </span>
+                                  ) : (
+                                    <span className="px-2 py-1 rounded bg-yellow-100 text-yellow-800 text-sm">
+                                      Pending
+                                    </span>
+                                  )}
+                                </TableCell>
+                                <TableCell>
+                                  {row.Approved === "true" ? (
+                                    <Button
+                                      variant="ghost"
+                                      size="icon"
+                                      onClick={() => handleUndoApproveTransfer(row)}
+                                      className="text-red-500 hover:text-red-700">
+                                        <RotateCcw className="h-5 w-5" />
+                                      </Button>
+                                  ) : ( null )}
+                                </TableCell>
+                              </TableRow>
+                            ) : (
+                              <></>
+                            )
+                          )}
+                        </TableBody>
+                      </Table>
+                    </AccordionContent>
                   </AccordionItem>
                 </Accordion>
                 

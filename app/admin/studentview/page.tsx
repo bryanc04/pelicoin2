@@ -73,6 +73,7 @@ interface TransferCardRow {
   source: string;
   destination: string;
   created_at: string;
+  approved: string;
 }
 
 const AdminStudentView = () => {
@@ -251,6 +252,7 @@ const AdminStudentView = () => {
         source: m ? m[2] : "—",
         destination: m ? m[3] : "—",
         created_at: n.Time || new Date().toISOString(),
+        approved: n.Approved,
       };
     });
     setTransfers(rows);
@@ -1332,7 +1334,18 @@ const handleUnregister = async (
                                       {t.amount !== null ? `${t.amount.toFixed(2)} Pelicoin` : "—"}
                                     </span>
                                   </div>
-                                  <Button onClick={() => removeTransfer(t.id)}>Cancel Request</Button>
+                                  {t.approved === "true" ? (
+                                    <Button
+                                      disabled
+                                      className="bg-gray-300 text-gray-600 cursor-not-allowed"
+                                    >
+                                      Approved
+                                    </Button>
+                                  ) : (
+                                    <Button onClick={() => removeTransfer(t.id)}>
+                                      Cancel Request
+                                    </Button>
+                                  )}
                                 </li>
                               ))}
                             </ul>
