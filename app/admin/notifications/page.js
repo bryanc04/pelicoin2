@@ -356,7 +356,7 @@ export default function Home() {
                                 <TableCell>{formatDate(row.Time)}</TableCell>
                                 <TableCell>
                                   {row.Approved === "true" ? (
-                                    <span className="px-2 py-1 rounded bg-gray-200 text-gray-700 text-sm">
+                                    <span className="px-2 py-1 rounded bg-green-200 text-gray-700 text-sm">
                                       Approved
                                     </span>
                                   ) : (
