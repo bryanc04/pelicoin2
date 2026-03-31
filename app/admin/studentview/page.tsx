@@ -358,9 +358,9 @@ const AdminStudentView = () => {
 
       if (error) throw error;
 
-      const notificationContent = `${studentData["First Name"]} ${
+      const notificationContent = `Admin purchased for ${studentData["First Name"]} ${
         studentData["Last Name"]
-      } purchased ${selectedItem.Name} for ${selectedItem.Price} Pelicoin${
+      } ${selectedItem.Name} for ${selectedItem.Price} Pelicoin${
         selectedItem.requires_custom_input ? ` (${customInput})` : ""
       }`;
 
@@ -437,9 +437,9 @@ const AdminStudentView = () => {
       toast.success("Sign Up Successful!");
       addNotification(
         "Sign Ups",
-        `${studentData["First Name"]} ${
+        `Admin signed ${studentData["First Name"]} ${
           studentData["Last Name"]
-        } signed up for ${meetingTopic} on ${formatDate(meetingdate)}`,
+        } up for ${meetingTopic} on ${formatDate(meetingdate)}`,
         new Date(),
         Math.floor(Math.random() * 1000000000000000),
         true
@@ -483,9 +483,9 @@ const handleUnregister = async (
       toast.success("Succesfully unregistered from " + meetingTopic);
       addNotification(
         "Un-registers",
-        `${studentData["First Name"]} ${
+        `Admin unregistered ${studentData["First Name"]} ${
           studentData["Last Name"]
-        } unregistered from ${meetingTopic} on ${formatDate(meetingdate)}`,
+        } from ${meetingTopic} on ${formatDate(meetingdate)}`,
         new Date(),
         Math.floor(Math.random() * 1000000000000000),
         true
@@ -508,7 +508,7 @@ const handleUnregister = async (
     try {
       await addNotification(
         "Transfer Requests",
-        `${studentData["First Name"]} ${studentData["Last Name"]} requested to transfer ${transferRequest.amount} Pelicoin from ${transferRequest.source} to ${transferRequest.destination}`,
+        `Admin requested transfer for ${studentData["First Name"]} ${studentData["Last Name"]} of ${transferRequest.amount} Pelicoin from ${transferRequest.source} to ${transferRequest.destination}`,
         new Date(),
         Math.floor(Math.random() * 1000000000000000),
         false
