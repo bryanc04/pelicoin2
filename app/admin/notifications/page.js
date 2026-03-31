@@ -216,9 +216,10 @@ export default function Home() {
                     <AccordionContent>
                       <Table>
                         <TableBody>
-                          {data.map((row) =>
-                            row.Category == "Purchases" ? (
-                              <TableRow key={row.id || Math.random() * 10}>
+                          {data
+                            .filter((row) => row.Category == "Purchases")
+                            .map((row) => (
+                              <TableRow key={row.id ?? `${row.Category}-${row.Time}-${row.Content}`}>
                                 <TableCell>{row.Content}</TableCell>
                                 <TableCell>{formatDate(row.Time)}</TableCell>
 
@@ -233,10 +234,7 @@ export default function Home() {
                                   </Button>
                                 </TableCell>
                               </TableRow>
-                            ) : (
-                              <></>
-                            )
-                          )}
+                            ))}
                         </TableBody>
                       </Table>
                     </AccordionContent>
@@ -246,9 +244,10 @@ export default function Home() {
                     <AccordionContent>
                       <Table>
                         <TableBody>
-                          {data.map((row) =>
-                            row.Category == "Sign Ups" ? (
-                              <TableRow key={row.id || Math.random() * 10}>
+                          {data
+                            .filter((row) => row.Category == "Sign Ups")
+                            .map((row) => (
+                              <TableRow key={row.id ?? `${row.Category}-${row.Time}-${row.Content}`}>
                                 <TableCell>{row.Content}</TableCell>
                                 <TableCell>{formatDate(row.Time)}</TableCell>
 
@@ -263,10 +262,7 @@ export default function Home() {
                                   </Button>
                                 </TableCell>
                               </TableRow>
-                            ) : (
-                              <></>
-                            )
-                          )}
+                            ))}
                         </TableBody>
                       </Table>
                     </AccordionContent>
@@ -276,9 +272,10 @@ export default function Home() {
                     <AccordionContent>
                       <Table>
                         <TableBody>
-                          {data.map((row) =>
-                            row.Category == "Un-registers" ? (
-                              <TableRow key={row.id || Math.random() * 10}>
+                          {data
+                            .filter((row) => row.Category == "Un-registers")
+                            .map((row) => (
+                              <TableRow key={row.id ?? `${row.Category}-${row.Time}-${row.Content}`}>
                                 <TableCell>{row.Content}</TableCell>
                                 <TableCell>{formatDate(row.Time)}</TableCell>
 
@@ -293,10 +290,7 @@ export default function Home() {
                                   </Button>
                                 </TableCell>
                               </TableRow>
-                            ) : (
-                              <></>
-                            )
-                          )}
+                            ))}
                         </TableBody>
                       </Table>
                     </AccordionContent>
@@ -313,9 +307,12 @@ export default function Home() {
                       </Button>
                       <Table>
                         <TableBody>
-                          {data.map((row) =>
-                            row.Category == "Transfer Requests" && row.Approved == "false" ? (
-                              <TableRow key={row.id}>
+                          {data
+                            .filter(
+                              (row) => row.Category == "Transfer Requests" && row.Approved == "false"
+                            )
+                            .map((row) => (
+                              <TableRow key={row.id ?? `${row.Category}-${row.Time}-${row.Content}`}>
                                 <TableCell>{row.Content}</TableCell>
                                 <TableCell>{formatDate(row.Time)}</TableCell>
                                 <TableCell>
@@ -336,10 +333,7 @@ export default function Home() {
                                   </Button>
                                 </TableCell>
                               </TableRow>
-                            ) : (
-                              <></>
-                            )
-                          )}
+                            ))}
                         </TableBody>
                       </Table>
                     </AccordionContent>
@@ -349,9 +343,10 @@ export default function Home() {
                     <AccordionContent>
                       <Table>
                         <TableBody>
-                          {data.map((row) =>
-                            row.Category === "Transfer Requests" ? (
-                              <TableRow key={row.id}>
+                          {data
+                            .filter((row) => row.Category === "Transfer Requests")
+                            .map((row) => (
+                              <TableRow key={row.id ?? `${row.Category}-${row.Time}-${row.Content}`}>
                                 <TableCell>{row.Content}</TableCell>
                                 <TableCell>{formatDate(row.Time)}</TableCell>
                                 <TableCell>
@@ -377,10 +372,7 @@ export default function Home() {
                                   ) : ( null )}
                                 </TableCell>
                               </TableRow>
-                            ) : (
-                              <></>
-                            )
-                          )}
+                            ))}
                         </TableBody>
                       </Table>
                     </AccordionContent>
