@@ -129,7 +129,7 @@ const Home: React.FC = () => {
       .select()
       .order("Date", { ascending: true });
     if (!error) {
-      console.log("Fetched meetings:", data);
+      console.log("Fetched meetings successfully");
       setMeetings(data || []);
     } else {
       console.error("Error fetching meetings:", error);
@@ -325,27 +325,36 @@ const Home: React.FC = () => {
       `${curUser["First Name"]} ${curUser["Last Name"]}`,
     ];
 
-    const { error } = await supabase
+    const { data, error } = await supabase
       .from("Meetings")
       .update({ Attendees: newAttendees })
-      .eq("Topic", meetingTopic);
+      .eq("Topic", meetingTopic)
+      .select("Topic, Attendees");
 
-    if (!error) {
-      fetchMeetings();
-      toast.success("Sign Up Successful!");
-      addNotification(
-        "Sign Ups",
-        `${curUser["First Name"]} ${
-          curUser["Last Name"]
-        } signed up for ${meetingTopic} on ${formatDate(meetingdate)}`,
-        new Date(),
-        Math.floor(Math.random() * 1000000000000000),
-        true
-      );
-    } else {
+    // console.log(data);
+    // if (data !== null){
+    //   console.log(data[0].Attendees.length);
+    // }
+
+
+    if (error || !data || data[0].Attendees.length === attendees.length || !data[0].Attendees.includes(`${curUser["First Name"]} ${curUser["Last Name"]}`)) {
       alert("Failed to sign up.");
+      return;
     }
+
+    fetchMeetings();
+    toast.success(`Signed up for ${meetingTopic} Successfully!`);
+    addNotification(
+      "Sign Ups",
+      `${curUser["First Name"]} ${
+        curUser["Last Name"]
+      } signed up for ${meetingTopic} on ${formatDate(meetingdate)}`,
+      new Date(),
+      Math.floor(Math.random() * 1000000000000000),
+      true
+    );
     setLoading(false);
+    
   };
 
   // New function to handle unregistering from meetings
