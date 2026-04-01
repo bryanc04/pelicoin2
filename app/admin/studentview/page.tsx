@@ -405,7 +405,7 @@ const AdminStudentView = () => {
   };
   const handleSignUp = async (
     meetingTopic: string,
-    attendees: string[], // need parameter for waitlist members
+    attendees: string[],
     meetingdate: any
   ) => {
     setLoading(true);
@@ -413,42 +413,55 @@ const AdminStudentView = () => {
     const maxStudents = extractMaxFromTopic(meetingTopic);
 
     // Check if meeting is full
-    // if meeting is full & meeting date is before 24 hours, add to waitlist
-    
+    if ((attendees.length || 0 ) >= maxStudents) {
+      toast.error("This meeting is full!");
+      setLoading(false);
+      return;
+    }
 
-    if (attendees.includes(studentData["First Name"] + " " + studentData["Last Name"])) {
-      toast.error("Already signed up!");
+    if (
+      attendees.includes(studentData["First Name"] + " " + studentData["Last Name"])
+    ) {
       alert("Already signed up!");
       setLoading(false);
       return;
     }
 
-    if ((attendees.length || 0 ) < maxStudents) {
-      const newAttendees = [
+    const newAttendees = [
       ...attendees,
       `${studentData["First Name"]} ${studentData["Last Name"]}`,
-    ]; 
-      const { error } = await supabase
-        .from("Meetings")
-        .update({ Attendees: newAttendees })
-        .eq("Topic", meetingTopic);
+    ];
 
-      fetchMeetings();
-      toast.success("Sign Up Successful!");
-      addNotification(
-        "Sign Ups",
-        `Admin signed ${studentData["First Name"]} ${
-          studentData["Last Name"]
-        } up for ${meetingTopic} on ${formatDate(meetingdate)}`,
-        new Date(),
-        Math.floor(Math.random() * 1000000000000000),
-        true
-      );
-    } 
+    const { data, error } = await supabase
+      .from("Meetings")
+      .update({ Attendees: newAttendees })
+      .eq("Topic", meetingTopic)
+      .select("Topic, Attendees");
 
-    
+    // console.log(data);
+    // if (data !== null){
+    //   console.log(data[0].Attendees.length);
+    // }
 
+
+    if (error || !data || data[0].Attendees.length === attendees.length || !data[0].Attendees.includes(`${studentData["First Name"]} ${studentData["Last Name"]}`)) {
+      alert("Failed to sign up.");
+      return;
+    }
+
+    fetchMeetings();
+    toast.success(`Signed up for ${meetingTopic} Successfully!`);
+    addNotification(
+      "Sign Ups",
+      `${studentData["First Name"]} ${
+        studentData["Last Name"]
+      } signed up for ${meetingTopic} on ${formatDate(meetingdate)}`,
+      new Date(),
+      Math.floor(Math.random() * 1000000000000000),
+      true
+    );
     setLoading(false);
+    
   };
 
 const handleUnregister = async (
