@@ -132,28 +132,35 @@ export default function Home() {
   const handleApproveAllPurchases = async () => {
     try {
         if (data.some(row => row.Category === "Purchases" && row.Approved !== "approved" && row.Approved !== "denied")) {
-            const { data, error } = await supabase            
-            .from("Notifications")
-            .update({ Approved: "approved" })
-            .eq("Category", "Purchases")
-            .select();
+          const { data, error } = await supabase            
+          .from("Notifications")
+          .update({ Approved: "approved" })
+          .eq("Category", "Purchases")
+          .eq("Approved", !"approved" && !"denied")
+          .select();
+
+          if (error) throw error;
+      
+          if (!data.some(row => row.Category === "Purchases" && row.Approved !== "approved" && row.Approved !== "denied")) {
+            toast.success("All Purchases Approved!");
+          } else {
+            toast.error("Failed to approve all pending purchases");
+          }
+          setShowApproveAllPurchasesDialog(false);
+          fetchData();
         } else {
           toast.error("No pending purchases to approve");
+          setShowApproveAllPurchasesDialog(false);
+          fetchData();
           return;
         }
       
-      if (error) throw error;
       
-      if (!data.some(row => row.Category === "Purchases" && row.Approved !== "approved" && row.Approved !== "denied")) {
-        toast.success("All Purchases Approved!");
-      } else {
-        toast.error("Failed to approve all pending purchases");
-      }
-      setShowApproveAllPurchasesDialog(false);
-      fetchData();
     } catch (error) {
       console.error("Error approving purchases:", error);
       toast.error("Failed to approve all purchases due to error");
+      setShowApproveAllPurchasesDialog(false);
+      fetchData();
     }
   };
 
@@ -240,20 +247,32 @@ export default function Home() {
             .from("Notifications")
             .update({ Approved: "true" })
             .eq("Category", "Transfer Requests")
-            .eq("Approved", "false");
+            .eq("Approved", "false")
+            .select();
+            // console.log(data);
+
+            if (error) throw error;
+      
+            if (data.some(row => row.Category === "Transfer Requests" && row.Approved === "false")) {
+              toast.error("Failed to approve all transfers");
+              setShowApproveAllDialog(false);
+              fetchData();
+              return;
+            }
+
+            toast.success("All Transfers Approved!");
+            setShowApproveAllDialog(false);
+            fetchData();
         } else {
           toast.error("No pending transfer requests to approve");
+          setShowApproveAllDialog(false);
+          fetchData();
           return;
         }
-      
-      if (error) throw error;
-  
-      toast.success("All Transfers Approved!");
-      setShowApproveAllDialog(false);
-      fetchData();
     } catch (error) {
       console.error("Error approving transfers:", error);
       toast.error("Failed to approve all transfers");
+      fetchData();
     }
   }
 
@@ -606,7 +625,7 @@ export default function Home() {
               >
                 Cancel
               </Button>
-              <Button type="module" onClick={() => handleApproveAllTransfers}>Confirm</Button>
+              <Button type="module" onClick={handleApproveAllTransfers}>Confirm</Button>
             </DialogFooter>
           </DialogContent>
         </Dialog>
@@ -626,7 +645,7 @@ export default function Home() {
               >
                 Cancel
               </Button>
-              <Button type="module" onClick={() => handleApproveAllPurchases}>Confirm</Button>
+              <Button type="module" onClick={handleApproveAllPurchases}>Confirm</Button>
             </DialogFooter>
           </DialogContent>
         </Dialog>
