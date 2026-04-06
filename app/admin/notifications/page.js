@@ -243,7 +243,7 @@ export default function Home() {
         // check if there are any pending transfer requests, if not error out
         // if there are, approve all of them by setting Approved to true where Category is Transfer Requests and Approved is false
         if (data.some(row => row.Category === "Transfer Requests" && row.Approved === "false")) {
-            const { error } = await supabase            
+            const { data, error } = await supabase            
             .from("Notifications")
             .update({ Approved: "true" })
             .eq("Category", "Transfer Requests")
@@ -273,6 +273,7 @@ export default function Home() {
       console.error("Error approving transfers:", error);
       toast.error("Failed to approve all transfers");
       fetchData();
+      setShowApproveAllDialog(false);
     }
   }
 
