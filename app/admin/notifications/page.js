@@ -128,24 +128,34 @@ export default function Home() {
         // check if there are any pending transfer requests, if not error out
         // if there are, approve all of them by setting Approved to true where Category is Transfer Requests and Approved is false
         if (data.some(row => row.Category === "Transfer Requests" && row.Approved === "false")) {
-            const { error } = await supabase            
+            const { data, error } = await supabase            
             .from("Notifications")
             .update({ Approved: "true" })
             .eq("Category", "Transfer Requests")
-            .eq("Approved", "false");
+            .eq("Approved", "false")
+            .select();
+            // console.log(data);
+
+            if (error) throw error;
+      
+            if (data.some(row => row.Category === "Transfer Requests" && row.Approved === "false")) {
+              toast.error("Failed to approve all transfers");
+              setShowApproveAllDialog(false);
+              return;
+            }
+
+            toast.success("All Transfers Approved!");
+            setShowApproveAllDialog(false);
+            fetchData();
         } else {
           toast.error("No pending transfer requests to approve");
+          setShowApproveAllDialog(false);
           return;
         }
-      
-      if (error) throw error;
-  
-      toast.success("All Transfers Approved!");
-      setShowApproveAllDialog(false);
-      fetchData();
     } catch (error) {
       console.error("Error approving transfers:", error);
       toast.error("Failed to approve all transfers");
+      setShowApproveAllDialog(false);
     }
   }
 
@@ -404,7 +414,7 @@ export default function Home() {
               >
                 Cancel
               </Button>
-              <Button type="module" onClick={() => handleApproveAllTransfers}>Confirm</Button>
+              <Button type="module" onClick={handleApproveAllTransfers}>Confirm</Button>
             </DialogFooter>
           </DialogContent>
         </Dialog>
