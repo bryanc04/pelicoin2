@@ -76,6 +76,13 @@ interface TransferCardRow {
   approved: string;
 }
 
+interface PurchaseCardRow {
+  id: string;
+  item: string;
+  created_at: string;
+  approved: string;
+}
+
 const AdminStudentView = () => {
   const [selectedStudent, setSelectedStudent] = useState<string | null>(null);
   const [studentData, setStudentData] = useState<any>({});
@@ -105,6 +112,9 @@ const AdminStudentView = () => {
 
   const [transfers, setTransfers] = useState<TransferCardRow[]>([]);
   const [transfersLoading, setTransfersLoading] = useState(false);
+
+  const [purchases, setPurchases] = useState<PurchaseCardRow[]>([]);
+  const [purchasesLoading, setPurchasesLoading] = useState(false);
 
   useEffect(() => {
     const checkMobile = () => {
@@ -261,6 +271,42 @@ const AdminStudentView = () => {
     setTransfersLoading(false);
   };
 
+  const fetchPurchases = async (userLike: any) => {
+    if (!userLike) return;
+    const fullName = `${userLike["First Name"]} ${userLike["Last Name"]}`.toLowerCase();
+    setPurchasesLoading(true);
+  
+    const { data, error } = await supabase
+      .from("Notifications")
+      .select("*")
+      .eq("Category", "Purchases")
+      .order("Time", { ascending: false });
+  
+    if (error) {
+      console.error("fetchPurchases error:", error);
+      setPurchases([]);
+      setPurchasesLoading(false);
+      return;
+    }
+
+    const mine = (data || []).filter(
+    (n: any) =>
+      n.Category === "Purchases" &&
+      (n.Content || "").toLowerCase().startsWith(fullName)
+    );
+    const rows: PurchaseCardRow[] = mine.map((n: any) => {
+      const content: string = n.Content || "";
+      return {
+        id: String(n.id),
+        item: n.Content || "—",
+        created_at: n.Time || new Date().toISOString(),
+        approved: n.Approved,
+      };
+    });
+    setPurchases(rows);
+    setPurchasesLoading(false);
+  };
+
   const handleStudentSelect = (studentName: string) => {
     const student = students.find((s) => s.Student === studentName);
     if (student) {
@@ -274,6 +320,7 @@ const AdminStudentView = () => {
       buildPieChartData(userData);
       setIsPopoverOpen(false);
       fetchTransfers(userData);
+      fetchPurchases(userData);
     }
   };
 
@@ -369,10 +416,11 @@ const AdminStudentView = () => {
         notificationContent,
         new Date(),
         Math.floor(Math.random() * 1000000000000000),
-        true
+        "pending"
       );
 
       toast.success("Purchase successful!");
+      fetchPurchases(studentData);
       setStudentData({ ...studentData, Cash: newBalance });
       buildPieChartData({ ...studentData, Cash: newBalance });
     } catch (error) {
@@ -530,7 +578,7 @@ const handleUnregister = async (
       toast.success("Transfer request submitted!");
       setShowTransferDialog(false);
       setTransferRequest({ source: "Cash", destination: "Cash", amount: 0 });
-      await fetchTransfers(curUser);
+      await fetchTransfers(studentData);
     } catch (error) {
       console.error("Transfer request error:", error);
       toast.error("Failed to submit transfer request");
@@ -546,7 +594,7 @@ const handleUnregister = async (
       if (error) throw error;
 
       toast.success("Transfer request removed!");
-      await fetchTransfers(curUser);
+      await fetchTransfers(studentData);
     } catch (error) {
       console.error("Remove transfer error:", error);
       toast.error("Failed to remove transfer request");
@@ -1188,10 +1236,11 @@ const handleUnregister = async (
                     className="w-full h-full flex flex-col"
                     onValueChange={(value) => setActiveTab(value)}
                   >
-                    <TabsList className="grid w-full grid-cols-3">
+                    <TabsList className="grid w-full grid-cols-4">
                       <TabsTrigger value="meetings">Meetings</TabsTrigger>
                       <TabsTrigger value="shop">Shop</TabsTrigger>
                       <TabsTrigger value="transfers">Transfers</TabsTrigger>
+                      <TabsTrigger value="purchases">Purchases</TabsTrigger>
                     </TabsList>
                     <div className="relative flex-1">
                       <TabsContent
@@ -1366,6 +1415,57 @@ const handleUnregister = async (
                             </ul>
                           ) : (
                             <p className="text-sm text-gray-500">No transfer requests yet.</p>
+                          )}
+                        </div>
+                      </TabsContent>
+                      <TabsContent
+                      value="purchases"
+                      className="absolute inset-0 p-6 bg-white shadow rounded-lg overflow-hidden flex flex-col"
+                      style={{ zIndex: activeTab === "purchases" ? 1 : -1 }}
+                      >
+                        <h2 className="text-xl font-semibold mb-4">Purchases</h2>
+                        
+                        <div className="flex-1 overflow-y-auto min-h-0">
+                          {purchasesLoading ? (
+                            <p className="text-sm text-gray-500">Loading purchases...</p>
+                          ) : purchases.length ? (
+                            <ul className="space-y-4">
+                              {purchases.map((t) => (
+                                <li
+                                  key={t.id}
+                                  className="p-4 bg-gray-50 rounded-lg flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2"
+                                >
+                                  <div>
+                                    <h3 className="font-bold text-sm sm:text-base">
+                                      {t.item}
+                                    </h3>
+                                    <p className="text-xs sm:text-sm text-gray-500">
+                                      {formatDate(t.created_at)}
+                                    </p>
+                                  </div>
+                                  {t.approved === "approved" ? (
+                                    <Button
+                                      disabled
+                                      className="bg-gray-300 text-gray-600 cursor-not-allowed"
+                                    >
+                                      Approved
+                                    </Button>
+                                  ) : (
+                                    t.approved === "denied" ? (
+                                      <Button disabled>
+                                        Denied
+                                      </Button>
+                                    ) : (
+                                      <Button onClick={() => removeTransfer(t.id)}>
+                                      Cancel Request
+                                      </Button>
+                                    )
+                                  )}
+                                </li>
+                              ))}
+                            </ul>
+                          ) : (
+                            <p className="text-sm text-gray-500">No purchase requests yet.</p>
                           )}
                         </div>
                         </TabsContent>

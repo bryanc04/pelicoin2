@@ -2,7 +2,7 @@
 
 import React from "react";
 import { format } from "date-fns";
-import { Calendar as CalendarIcon, Clock, Trash2, RotateCcw, Loader2, Undo } from "lucide-react";
+import { Calendar as CalendarIcon, Clock, Check, X, Trash2, RotateCcw, Loader2, Undo } from "lucide-react";
 import supabase from "../../supabaseClient";
 import { useRef, useEffect, useState } from "react";
 import { Button } from "@/components/ui/button";
@@ -35,11 +35,14 @@ import {
   AccordionItem,
   AccordionTrigger,
 } from "@/components/ui/accordion";
+import { notification } from "antd";
 
 export default function Home() {
   const [data, setData] = React.useState([]);
   const [loading, setLoading] = React.useState(true);
   const [showApproveAllDialog, setShowApproveAllDialog] = useState(false);
+  const [showDeleteAllPurchasesDialog, setShowDeleteAllPurchasesDialog] = useState(false);
+  const [showApproveAllPurchasesDialog, setShowApproveAllPurchasesDialog] = useState(false);
 
   useEffect(() => emailjs.init("D6aKMxno3vr0IgN3e"), []);
 
@@ -120,8 +123,120 @@ export default function Home() {
 
   const handleApproveAllClick = () => {
       setShowApproveAllDialog(true);
-    };
+  };
 
+  const handleApproveAllPurchasesClick = () => {
+    setShowApproveAllPurchasesDialog(true);
+  };
+
+  const handleApproveAllPurchases = async () => {
+    try {
+        if (data.some(row => row.Category === "Purchases" && row.Approved !== "approved" && row.Approved !== "denied")) {
+          const { data, error } = await supabase            
+          .from("Notifications")
+          .update({ Approved: "approved" })
+          .eq("Category", "Purchases")
+          .eq("Approved", !"approved" && !"denied")
+          .select();
+
+          if (error) throw error;
+      
+          if (!data.some(row => row.Category === "Purchases" && row.Approved !== "approved" && row.Approved !== "denied")) {
+            toast.success("All Purchases Approved!");
+          } else {
+            toast.error("Failed to approve all pending purchases");
+          }
+          setShowApproveAllPurchasesDialog(false);
+          fetchData();
+        } else {
+          toast.error("No pending purchases to approve");
+          setShowApproveAllPurchasesDialog(false);
+          fetchData();
+          return;
+        }
+      
+      
+    } catch (error) {
+      console.error("Error approving purchases:", error);
+      toast.error("Failed to approve all purchases due to error");
+      setShowApproveAllPurchasesDialog(false);
+      fetchData();
+    }
+  };
+
+  const handleApprovePurchase = async (notification) => {
+    try {
+      const { data, error } = await supabase
+        .from("Notifications")
+        .update({ Approved: "approved" })
+        .eq("id", notification.id)
+        .select();
+    
+
+      if (error) throw error;
+
+      if (data[0].Approved === "approved") {
+        toast.success("Purchase approved!");
+        fetchData();
+      } else {
+        toast.error("Failed to approve purchase");
+      }
+
+    } catch (error) {
+      console.error("Error approving purchase:", error);
+      toast.error("Failed to approve purchase due to error");
+    }
+    
+  };
+
+  const handleDenyPurchase = async (notification) => {
+    try {
+      const { data, error } = await supabase
+        .from("Notifications")
+        .update({ Approved: "denied" })
+        .eq("id", notification.id)
+        .select();
+  
+      if (error) throw error;
+  
+      if (data[0].Approved === "denied") {
+        toast.success("Request successfully denied!");
+        fetchData();
+      } else {
+        toast.error("Failed to deny request");
+      }
+
+    } catch (error) {
+      console.error("Error denying request:", error);
+      toast.error("Failed to deny request due to error");
+    }
+  };
+
+  const handleResetPurchase = async (notification) => {
+    try {
+      const { data, error } = await supabase
+        .from("Notifications")
+        .update({ Approved: "pending" })
+        .eq("id", notification.id)
+        .select();
+
+      if (error) throw error;
+
+      if (data[0].Approved === "pending") {
+        toast.success("Purchase set to pending!");
+        fetchData();
+      } else {
+        toast.error("Failed to set purchase to pending");
+        fetchData();
+      }
+
+    } catch (error) {
+      console.error("Error setting purchase to pending:", error);
+      toast.error("Failed to set pending purchase due to error");
+    }
+  
+  };
+  
   const handleApproveAllTransfers = async () => {
     try {
 
@@ -141,6 +256,7 @@ export default function Home() {
             if (data.some(row => row.Category === "Transfer Requests" && row.Approved === "false")) {
               toast.error("Failed to approve all transfers");
               setShowApproveAllDialog(false);
+              fetchData();
               return;
             }
 
@@ -150,30 +266,38 @@ export default function Home() {
         } else {
           toast.error("No pending transfer requests to approve");
           setShowApproveAllDialog(false);
+          fetchData();
           return;
         }
     } catch (error) {
       console.error("Error approving transfers:", error);
       toast.error("Failed to approve all transfers");
+      fetchData();
       setShowApproveAllDialog(false);
     }
   }
 
   const handleApproveTransfer = async (notification) => {
     try {
-      const { error } = await supabase
+      const { data, error } = await supabase
         .from("Notifications")
         .update({ Approved: "true" })
-        .eq("id", notification.id);
-  
+        .eq("id", notification.id)
+        .select();
       if (error) throw error;
-  
-      toast.success("Transfer approved!");
-      fetchData();
+      
+      if (data[0].Approved === "true") {
+        toast.success("Transfer approved!");
+        fetchData();
+      } else {
+        toast.error("Failed to approve transfer");
+      }
+      
     } catch (error) {
       console.error("Error approving transfer:", error);
       toast.error("Failed to approve transfer");
     }
+    
   };
 
   const handleUndoApproveTransfer = async (notification) => {
@@ -224,16 +348,91 @@ export default function Home() {
                   <AccordionItem value="item-1">
                     <AccordionTrigger>Student Purchases</AccordionTrigger>
                     <AccordionContent>
+                      <Button
+                        variant="outline"
+                        onClick={handleApproveAllPurchasesClick}
+                        className="mr-2"
+                      >
+                        Approve All
+                      </Button>
+                      <Table>
+                        <TableBody>
+                          {data
+                            .filter((row) => row.Category == "Purchases" && row.Approved !== "approved")
+                            .map((row) => (
+                              <TableRow key={row.id ?? `${row.Category}-${row.Time}-${row.Content}`}>
+                                <TableCell className="w-2/3">{row.Content}</TableCell>
+                                <TableCell>{formatDate(row.Time)}</TableCell>
+
+                                <TableCell>
+                                  <Button
+                                    variant="ghost"
+                                    size="icon"
+                                    onClick={() => handleApprovePurchase(row)}
+                                    className="text-green-500 hover:text-green-700"
+                                  >
+                                    <Check className="h-5 w-5" />
+                                  </Button>
+                                   <Button
+                                    variant="ghost"
+                                    size="icon"
+                                    onClick={() => handleDenyPurchase(row)}
+                                    className="text-black-500 hover:text-red-500"
+                                  >
+                                    <X className="h-5 w-5" />
+                                  </Button>
+                                  <Button
+                                    variant="ghost"
+                                    size="icon"
+                                    onClick={() => handleDeleteMeeting(row)}
+                                    className="text-red-500 hover:text-red-700"
+                                  >
+                                    <Trash2 className="h-5 w-5" />
+                                  </Button>
+                                </TableCell>
+                              </TableRow>
+                            ))}
+                        </TableBody>
+                      </Table>
+                    </AccordionContent>
+                  </AccordionItem>{" "}
+                  <AccordionItem value="item-2">
+                    <AccordionTrigger>Purchase History</AccordionTrigger>
+                    <AccordionContent>
                       <Table>
                         <TableBody>
                           {data
                             .filter((row) => row.Category == "Purchases")
                             .map((row) => (
                               <TableRow key={row.id ?? `${row.Category}-${row.Time}-${row.Content}`}>
-                                <TableCell>{row.Content}</TableCell>
+                                <TableCell className="w-2/3">{row.Content}</TableCell>
                                 <TableCell>{formatDate(row.Time)}</TableCell>
-
                                 <TableCell>
+                                  {row.Approved === "approved" ? (
+                                    <span className="px-2 py-1 rounded bg-green-200 text-gray-700 text-sm">
+                                      Approved
+                                    </span>
+                                  ) : (row.Approved ==="denied" ? (
+                                    <span className="px-2 py-1 rounded bg-red-200 text-gray-700 text-sm">
+                                      Denied
+                                    </span>
+                                  ) : (
+                                    <span className="px-2 py-1 rounded bg-yellow-100 text-yellow-800 text-sm">
+                                      Pending
+                                    </span>
+                                  ))}
+                                </TableCell>
+                                <TableCell>
+                                  {row.Approved === "approved" || row.Approved === "denied" ? (
+                                    <Button
+                                    variant="ghost"
+                                    size="icon"
+                                    onClick={() => handleResetPurchase(row)}
+                                    className="text-gray-500 hover:text-red-700"
+                                  >
+                                    <RotateCcw className="h-5 w-5" />
+                                  </Button>
+                                  ) : ( null )}
                                   <Button
                                     variant="ghost"
                                     size="icon"
@@ -249,7 +448,7 @@ export default function Home() {
                       </Table>
                     </AccordionContent>
                   </AccordionItem>{" "}
-                  <AccordionItem value="item-2">
+                  <AccordionItem value="item-3">
                     <AccordionTrigger>Student Sign Ups</AccordionTrigger>
                     <AccordionContent>
                       <Table>
@@ -258,35 +457,7 @@ export default function Home() {
                             .filter((row) => row.Category == "Sign Ups")
                             .map((row) => (
                               <TableRow key={row.id ?? `${row.Category}-${row.Time}-${row.Content}`}>
-                                <TableCell>{row.Content}</TableCell>
-                                <TableCell>{formatDate(row.Time)}</TableCell>
-
-                                <TableCell>
-                                  <Button
-                                    variant="ghost"
-                                    size="icon"
-                                    onClick={() => handleDeleteMeeting(row.id)}
-                                    className="text-red-500 hover:text-red-700"
-                                  >
-                                    <Trash2 className="h-5 w-5" />
-                                  </Button>
-                                </TableCell>
-                              </TableRow>
-                            ))}
-                        </TableBody>
-                      </Table>
-                    </AccordionContent>
-                  </AccordionItem>
-                  <AccordionItem value="item-3">
-                    <AccordionTrigger>Un-registers</AccordionTrigger>
-                    <AccordionContent>
-                      <Table>
-                        <TableBody>
-                          {data
-                            .filter((row) => row.Category == "Un-registers")
-                            .map((row) => (
-                              <TableRow key={row.id ?? `${row.Category}-${row.Time}-${row.Content}`}>
-                                <TableCell>{row.Content}</TableCell>
+                                <TableCell className="w-2/3">{row.Content}</TableCell>
                                 <TableCell>{formatDate(row.Time)}</TableCell>
 
                                 <TableCell>
@@ -306,6 +477,34 @@ export default function Home() {
                     </AccordionContent>
                   </AccordionItem>
                   <AccordionItem value="item-4">
+                    <AccordionTrigger>Un-registers</AccordionTrigger>
+                    <AccordionContent>
+                      <Table>
+                        <TableBody>
+                          {data
+                            .filter((row) => row.Category == "Un-registers")
+                            .map((row) => (
+                              <TableRow key={row.id ?? `${row.Category}-${row.Time}-${row.Content}`}>
+                                <TableCell className="w-2/3">{row.Content}</TableCell>
+                                <TableCell>{formatDate(row.Time)}</TableCell>
+
+                                <TableCell>
+                                  <Button
+                                    variant="ghost"
+                                    size="icon"
+                                    onClick={() => handleDeleteMeeting(row.id)}
+                                    className="text-red-500 hover:text-red-700"
+                                  >
+                                    <Trash2 className="h-5 w-5" />
+                                  </Button>
+                                </TableCell>
+                              </TableRow>
+                            ))}
+                        </TableBody>
+                      </Table>
+                    </AccordionContent>
+                  </AccordionItem>
+                  <AccordionItem value="item-5">
                     <AccordionTrigger>Transfer Requests</AccordionTrigger>
                     <AccordionContent>
                       <Button
@@ -323,15 +522,24 @@ export default function Home() {
                             )
                             .map((row) => (
                               <TableRow key={row.id ?? `${row.Category}-${row.Time}-${row.Content}`}>
-                                <TableCell>{row.Content}</TableCell>
+                                <TableCell className="w-2/3">{row.Content}</TableCell>
                                 <TableCell>{formatDate(row.Time)}</TableCell>
                                 <TableCell>
                                   <Button
-                                    variant="outline"
+                                    variant="ghost"
+                                    size="icon"
                                     onClick={() => handleApproveTransfer(row)}
-                                    className="mr-2"
+                                    className="mr-2 text-green-500 hover:text-green-700"
                                   >
-                                    Approve
+                                    <Check className="h-5 w-5" />
+                                  </Button>
+                                  <Button
+                                    variant="ghost"
+                                    size="icon"
+                                    onClick={() => handleDenyPurchase(row)}
+                                    className="mr-2 text-gray-500 hover:text-red-700"
+                                  >
+                                    <X className="h-5 w-5" />
                                   </Button>
                                   <Button
                                     variant="ghost"
@@ -348,7 +556,7 @@ export default function Home() {
                       </Table>
                     </AccordionContent>
                   </AccordionItem>
-                  <AccordionItem value="item-5">
+                  <AccordionItem value="item-6">
                     <AccordionTrigger>Transfer History</AccordionTrigger>
                     <AccordionContent>
                       <Table>
@@ -357,21 +565,25 @@ export default function Home() {
                             .filter((row) => row.Category === "Transfer Requests")
                             .map((row) => (
                               <TableRow key={row.id ?? `${row.Category}-${row.Time}-${row.Content}`}>
-                                <TableCell>{row.Content}</TableCell>
+                                <TableCell className="w-2/3">{row.Content}</TableCell>
                                 <TableCell>{formatDate(row.Time)}</TableCell>
                                 <TableCell>
                                   {row.Approved === "true" ? (
                                     <span className="px-2 py-1 rounded bg-green-200 text-gray-700 text-sm">
                                       Approved
                                     </span>
+                                  ) : (row.Approved === "denied" ? (
+                                    <span className="px-2 py-1 rounded bg-red-200 text-red-800 text-sm">
+                                      Denied
+                                    </span>
                                   ) : (
                                     <span className="px-2 py-1 rounded bg-yellow-100 text-yellow-800 text-sm">
                                       Pending
                                     </span>
-                                  )}
+                                  ))}
                                 </TableCell>
                                 <TableCell>
-                                  {row.Approved === "true" ? (
+                                  {row.Approved === "true" || row.Approved === "denied" ? (
                                     <Button
                                       variant="ghost"
                                       size="icon"
@@ -398,7 +610,7 @@ export default function Home() {
           </CardContent>
         </Card>
       </SidebarProvider>
-      {/* Purchase Confirmation Dialog */}
+      {/* Approve All Transfers Confirmation Dialog */}
         <Dialog open={showApproveAllDialog} onOpenChange={setShowApproveAllDialog}>
           <DialogContent>
             <DialogHeader>
@@ -415,6 +627,26 @@ export default function Home() {
                 Cancel
               </Button>
               <Button type="module" onClick={handleApproveAllTransfers}>Confirm</Button>
+            </DialogFooter>
+          </DialogContent>
+        </Dialog>
+       {/* Approve All Purchases Confirmation Dialog */}
+        <Dialog open={showApproveAllPurchasesDialog} onOpenChange={setShowApproveAllPurchasesDialog}>
+          <DialogContent>
+            <DialogHeader>
+              <DialogTitle>Confirm Approve All Purchases</DialogTitle>
+            </DialogHeader>
+            <div className="py-4">
+              <p>Are you sure you want to approve all pending purchases?</p>
+            </div>
+            <DialogFooter>
+              <Button
+                variant="outline"
+                onClick={() => setShowApproveAllPurchasesDialog(false)}
+              >
+                Cancel
+              </Button>
+              <Button type="module" onClick={handleApproveAllPurchases}>Confirm</Button>
             </DialogFooter>
           </DialogContent>
         </Dialog>
