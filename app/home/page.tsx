@@ -36,12 +36,14 @@ ChartJS.register(ArcElement, Tooltip, Legend);
 interface Meeting {
   Topic: string;
   Date: string;
+  id: string;
   Attendees?: string[];
 }
 
 interface ShopItem {
   Name: string;
   Price: number;
+  id: string;
   requires_custom_input: boolean;
   custom_input_description?: string;
 }
@@ -206,7 +208,8 @@ const Home: React.FC = () => {
     });
   };
   
-  const extractMaxFromTopic = (topic = "") => {
+  const extractMaxFromID = (id = "") => {
+    const topic = supabase.from("Meetings").select("Topic").eq("id", id).single().toString();
     const m = topic.match(/\[max:(\d+)\]/i);
     return m ? Number(m[1]) : 15;
   };
@@ -308,13 +311,14 @@ const Home: React.FC = () => {
   };
 
   const handleSignUp = async (
+    meetingId: string,
     meetingTopic: string,
     attendees: string[],
     meetingdate: any
   ) => {
     setLoading(true);
 
-    const maxStudents = extractMaxFromTopic(meetingTopic);
+    const maxStudents = extractMaxFromID(meetingId);
 
     // Check if meeting is full
     if ((attendees.length || 0 ) >= maxStudents) {
@@ -370,6 +374,7 @@ const Home: React.FC = () => {
 
   // New function to handle unregistering from meetings
   const handleUnregister = async (
+    meetingId: string,
     meetingTopic: string,
     attendees: string[],
     meetingdate: string
@@ -392,7 +397,7 @@ const Home: React.FC = () => {
     const { error } = await supabase
       .from("Meetings")
       .update({ Attendees: updatedAttendees })
-      .eq("Topic", meetingTopic);
+      .eq("id", meetingId);
 
     if (!error) {
       fetchMeetings();
@@ -547,7 +552,7 @@ const Home: React.FC = () => {
         .update({ Cash: newBalance })
         .eq("SIS Login ID", curUser["SIS Login ID"]);
 
-      if (error) throw error;
+      // if (error) throw error;
 
       // Add notification instead of purchase history
       const notificationContent = `${curUser["First Name"]} ${
@@ -655,11 +660,13 @@ const Home: React.FC = () => {
   }
 
   return (
-    <div className="min-h-screen bg-gray-50 py-8 px-4 flex items-center">
+    <div className="min-h-screen w-full h-full
+    bg-gray-50 flex
+    justify-center items-center">
       <Toaster />
       <Analytics />
 
-      <div className="max-w-4xl mx-auto w-full">
+      <div className="min-h-screen p-6 max-w-5xl w-full flex-row">
         <header className="mb-8 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
           <h1 className="text-2xl sm:text-3xl font-bold">
             Hi, {curUser["First Name"] || "User"}!
@@ -667,7 +674,7 @@ const Home: React.FC = () => {
           <div className="flex gap-4">
             <Button
               variant="outline"
-              className="bg-blue-50 hover:bg-blue-100 text-blue-600 border-blue-300 w-full sm:w-auto"
+              className="bg-blue-50 hover:bg-blue-100 text-blue-600 font-semibold border-blue-300 w-full sm:w-auto"
               onClick={() =>
                 window.open(
                   "https://loomischaffeeschool-my.sharepoint.com/:w:/g/personal/lfisher_internal_loomis_org/ESp4JiuylpZGpv9HvBEYZOABceOGQnCSgcAfJj_K91jbtg?e=38froa",
@@ -686,10 +693,9 @@ const Home: React.FC = () => {
             </Button>
           </div>
         </header>
-
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-8 md:h-[40vh] mb-4 md:mb-0">
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-2 md:h-[40vh] mb-4 md:mb-0">
           {/* Pie Chart */}
-          <div className="p-6 bg-white shadow rounded-lg flex flex-col min-h-[300px] md:h-full">
+          <div className="p-6 bg-white shadow rounded-lg flex flex-col min-h-[340px] md:h-full">
             <h2 className="text-xl font-semibold mb-6">Portfolio Breakdown</h2>
             {piechartData ? (
               <div
@@ -1255,7 +1261,7 @@ const Home: React.FC = () => {
                     {meetings.length > 0 ? (
                       <ul className="space-y-4">
                         {meetings.map((meeting) => {
-                          const meetingMax = extractMaxFromTopic(meeting.Topic);
+                          const meetingMax = extractMaxFromID(meeting.id);
                           const isRegistered = meeting.Attendees?.includes(
                             curUser["First Name"] + " " + curUser["Last Name"]
                           );
@@ -1285,6 +1291,7 @@ const Home: React.FC = () => {
                                   disabled={loading}
                                   onClick={() =>
                                     handleUnregister(
+                                      meeting.id,
                                       meeting.Topic,
                                       meeting.Attendees || [],
                                       meeting.Date
@@ -1299,6 +1306,7 @@ const Home: React.FC = () => {
                                   disabled={loading || isFull}
                                   onClick={() =>
                                     handleSignUp(
+                                      meeting.id,
                                       meeting.Topic,
                                       meeting.Attendees || [],
                                       meeting.Date
@@ -1322,7 +1330,8 @@ const Home: React.FC = () => {
                   className="absolute inset-0 p-6 bg-white shadow rounded-lg overflow-hidden flex flex-col"
                   style={{ zIndex: activeTab === "shop" ? 1 : -1 }}
                 >
-                  <h2 className="text-xl font-semibold mb-4">Shop</h2>
+                  <h2 className="text-xl font-semibold mb-2">Shop</h2>
+                  <h3 className="text-sm text-gray-500 mb-2">Note: Info submitted on this page is for purchase requests - Balance removed upon purchase is not final. Prices may be higher due to sales tax on all items except for Celebration Tickets.</h3>
                   <div className="flex-1 overflow-y-auto min-h-0">
                     {shop.length > 0 ? (
                       <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
@@ -1364,7 +1373,8 @@ const Home: React.FC = () => {
                   className="absolute inset-0 p-6 bg-white shadow rounded-lg overflow-hidden flex flex-col"
                   style={{ zIndex: activeTab === "transfers" ? 1 : -1 }}
                 >
-                  <h2 className="text-xl font-semibold mb-4">Transfers</h2>
+                  <h2 className="text-xl font-semibold mb-2">Transfers</h2>
+                  <h3 className="text-sm text-gray-500 mb-2">Note: Transfer requests are fulfilled after the end of every month.</h3>
                   <div className="mb-4">
                     <Button onClick={() => setShowTransferDialog(true)}>New Transfer</Button>
                   </div>
@@ -1420,7 +1430,7 @@ const Home: React.FC = () => {
                   
                   <div className="flex-1 overflow-y-auto min-h-0">
                     {purchasesLoading ? (
-                      <p className="text-sm text-gray-500">Loading purchases...</p>
+                      <p className="text-sm text-gray-500">Loading purchase requests...</p>
                     ) : purchases.length ? (
                       <ul className="space-y-4">
                         {purchases.map((t) => (
@@ -1465,34 +1475,35 @@ const Home: React.FC = () => {
               </div>
             </Tabs>
           </div>
-        </div>
+          {/* Ticket Status */}
+            <div className="p-4 bg-white shadow rounded-lg col-span-full min-h-[150px] flex-row justify-center">
+              <h2 className="text-xl font-semibold text-center">Ticket Status</h2>
+              <div className="flex items-center justify-center gap-4 ">
+                <img
+                  alt="ticket"
+                  src={
+                    curUser["Celebration Ticket"] == 1
+                      ? "/ticket.png"
+                      : "/tickete.png"
+                  }
+                  className="w-[80px] h-auto"
+                />
+                <p className="text-right text-sm sm:text-base max-w-[60%]">
+                  {curUser["Celebration Ticket"] == 1 ? (
+                    <>Hooray! You have a ticket for the End-of-Year Celebration!</>
+                  ) : (
+                    <>
+                      Unfortunately, you don't have a ticket for the End-of-Year
+                      celebration :( Purchase above in shop.
+                    </>
+                  )}
+                </p>
+              </div>
+            </div>
 
-        {/* Ticket Status */}
-        <div className="mt-8 md:mt-8 p-6 bg-white shadow rounded-lg min-h-[150px] md:h-[20vh]">
-          <h2 className="text-xl font-semibold text-center">Ticket Status</h2>
-          <div className="flex items-center justify-center h-full gap-4">
-            <img
-              alt="ticket"
-              src={
-                curUser["Celebration Ticket"] == 1
-                  ? "/ticket.png"
-                  : "/tickete.png"
-              }
-              className="w-24 h-auto"
-            />
-            <p className="text-right text-sm sm:text-base max-w-[60%]">
-              {curUser["Celebration Ticket"] == 1 ? (
-                <>Hooray! You have a ticket for the End-of-Year Celebration!</>
-              ) : (
-                <>
-                  Unfortunately, you don't have a ticket for the End-of-Year
-                  celebration :( Purchase above in shop.
-                </>
-              )}
-            </p>
-          </div>
         </div>
-
+        
+        
         {/* Custom Input Dialog */}
         <Dialog
           open={showCustomInputDialog}
@@ -1526,7 +1537,7 @@ const Home: React.FC = () => {
         <Dialog open={showPurchaseDialog} onOpenChange={setShowPurchaseDialog}>
           <DialogContent>
             <DialogHeader>
-              <DialogTitle>Confirm Purchase</DialogTitle>
+              <DialogTitle>Confirm Purchase Request</DialogTitle>
             </DialogHeader>
             <div className="py-4">
               <p>Item: {selectedItem?.Name}</p>
