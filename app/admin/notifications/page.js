@@ -358,7 +358,7 @@ export default function Home() {
                       <Table>
                         <TableBody>
                           {data
-                            .filter((row) => row.Category == "Purchases" && row.Approved !== "approved")
+                            .filter((row) => row.Category == "Purchases" && row.Approved !== "approved" && row.Approved !== "denied")
                             .map((row) => (
                               <TableRow key={row.id ?? `${row.Category}-${row.Time}-${row.Content}`}>
                                 <TableCell className="w-2/3">{row.Content}</TableCell>
@@ -384,7 +384,7 @@ export default function Home() {
                                   <Button
                                     variant="ghost"
                                     size="icon"
-                                    onClick={() => handleDeleteMeeting(row)}
+                                    onClick={() => handleDeleteMeeting(row.id)}
                                     className="text-red-500 hover:text-red-700"
                                   >
                                     <Trash2 className="h-5 w-5" />
