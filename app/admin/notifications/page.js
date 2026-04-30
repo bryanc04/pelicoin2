@@ -136,7 +136,8 @@ export default function Home() {
           .from("Notifications")
           .update({ Approved: "approved" })
           .eq("Category", "Purchases")
-          .eq("Approved", !"approved" && !"denied")
+          .neq("Approved", "approved")
+          .neq("Approved", "denied")
           .select();
 
           if (error) throw error;
