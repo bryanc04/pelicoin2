@@ -343,7 +343,7 @@ const Home: React.FC = () => {
     const { data, error } = await supabase
       .from("Meetings")
       .update({ Attendees: newAttendees })
-      .eq("Topic", meetingTopic)
+      .eq("id", meetingId)
       .select("Topic, Attendees");
 
     // console.log(data);
@@ -552,7 +552,7 @@ const Home: React.FC = () => {
         .update({ Cash: newBalance })
         .eq("SIS Login ID", curUser["SIS Login ID"]);
 
-      // if (error) throw error;
+      if (error) throw error;
 
       // Add notification instead of purchase history
       const notificationContent = `${curUser["First Name"]} ${

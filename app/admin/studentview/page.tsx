@@ -51,12 +51,14 @@ ChartJS.register(ArcElement, Tooltip, Legend);
 interface Meeting {
   Topic: string;
   Date: string;
+  id: string;
   Attendees?: string[];
 }
 
 interface ShopItem {
   Name: string;
   Price: number;
+  id: string;
   requires_custom_input: boolean;
   custom_input_description?: string;
 }
@@ -174,7 +176,8 @@ const AdminStudentView = () => {
     });
   };
 
-  const extractMaxFromTopic = (topic = "") => {
+  const extractMaxFromID = (id = "") => {
+    const topic = supabase.from("Meetings").select("Topic").eq("id", id).single().toString();
     const m = topic.match(/\[max:(\d+)\]/i);
     return m ? Number(m[1]) : 15;
   };
@@ -452,13 +455,14 @@ const AdminStudentView = () => {
     if (error) throw error;
   };
   const handleSignUp = async (
+    meetingId: string,
     meetingTopic: string,
     attendees: string[],
     meetingdate: any
   ) => {
     setLoading(true);
 
-    const maxStudents = extractMaxFromTopic(meetingTopic);
+    const maxStudents = extractMaxFromID(meetingId);
 
     // Check if meeting is full
     if ((attendees.length || 0 ) >= maxStudents) {
@@ -483,7 +487,7 @@ const AdminStudentView = () => {
     const { data, error } = await supabase
       .from("Meetings")
       .update({ Attendees: newAttendees })
-      .eq("Topic", meetingTopic)
+      .eq("id", meetingId)
       .select("Topic, Attendees");
 
     // console.log(data);
@@ -513,6 +517,7 @@ const AdminStudentView = () => {
   };
 
 const handleUnregister = async (
+    meetingId: string,
     meetingTopic: string,
     attendees: string[],
     meetingdate: string
@@ -539,7 +544,7 @@ const handleUnregister = async (
       const { error } = await supabase
       .from("Meetings")
       .update({ Attendees: updatedAttendees })
-      .eq("Topic", meetingTopic);
+      .eq("id", meetingId);
       fetchMeetings();
       toast.success("Succesfully unregistered from " + meetingTopic);
       addNotification(
@@ -611,16 +616,15 @@ const handleUnregister = async (
   }
 
   return (
-    <SidebarProvider>
+    <SidebarProvider className="bg-gray-50">
       <AppSidebar />
       <SidebarTrigger />
       <Toaster />
       <div
-        className="min-h-screen bg-gray-50 py-8 px-4 w-[100%]"
-        style={{ background: "white" }}
+        className="min-h-screen bg-gray-50 w-full h-full flex justify-center items-center"
       >
         <Analytics />
-        <div className="max-w-4xl mx-auto w-full">
+        <div className="min-h-screen p-6 max-w-5xl w-full flex-row">
           <header className="mb-8 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
             <div className="flex items-center gap-4">
               <h1 className="text-2xl sm:text-3xl font-bold">Student View</h1>
@@ -670,9 +674,9 @@ const handleUnregister = async (
 
           {selectedStudent ? (
             <>
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-8 md:h-[40vh] mb-4 md:mb-0">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-2 md:h-[40vh] mb-4 md:mb-0">
                 {/* Pie Chart */}
-                <div className="p-6 bg-white shadow rounded-lg flex flex-col min-h-[300px] md:h-full">
+                <div className="p-6 bg-white shadow rounded-lg flex flex-col min-h-[340px] md:h-full">
                   <h2 className="text-xl font-semibold mb-6">Portfolio Breakdown</h2>
                   {piechartData ? (
                     <div
@@ -1261,7 +1265,7 @@ const handleUnregister = async (
                           {meetings.length > 0 ? (
                             <ul className="space-y-4">
                               {meetings.map((meeting) => {
-                                const meetingMax = extractMaxFromTopic(meeting.Topic);
+                                const meetingMax = extractMaxFromID(meeting.id);
                                 const isRegistered = meeting.Attendees?.includes(
                                   curUser["First Name"] + " " + curUser["Last Name"]
                                 );
@@ -1291,6 +1295,7 @@ const handleUnregister = async (
                                         disabled={loading}
                                         onClick={() =>
                                           handleUnregister(
+                                            meeting.id,
                                             meeting.Topic,
                                             meeting.Attendees || [],
                                             meeting.Date
@@ -1305,6 +1310,7 @@ const handleUnregister = async (
                                         disabled={loading || isFull}
                                         onClick={() =>
                                           handleSignUp(
+                                            meeting.id,
                                             meeting.Topic,
                                             meeting.Attendees || [],
                                             meeting.Date
@@ -1328,8 +1334,8 @@ const handleUnregister = async (
                         className="absolute inset-0 p-6 bg-white shadow rounded-lg overflow-hidden flex flex-col"
                         style={{ zIndex: activeTab === "shop" ? 1 : -1 }}
                       >
-                        <h2 className="text-xl font-semibold mb-4">Shop</h2>
-                        <div className="flex-1 overflow-y-auto min-h-0">
+                        <h2 className="text-xl font-semibold mb-2">Shop</h2>
+                        <h3 className="text-sm text-gray-500 mb-2">Note: Info submitted on this page is for purchase requests - Balance removed upon purchase is not final. Prices may be higher due to sales tax on all items except for Celebration Tickets.</h3>                        <div className="flex-1 overflow-y-auto min-h-0">
                           {shop.length > 0 ? (
                             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                               {shop.map((item) => (
@@ -1370,7 +1376,8 @@ const handleUnregister = async (
                         className="absolute inset-0 p-6 bg-white shadow rounded-lg overflow-hidden flex flex-col"
                         style={{ zIndex: activeTab === "transfers" ? 1 : -1 }}
                       >
-                        <h2 className="text-xl font-semibold mb-4">Transfers</h2>
+                        <h2 className="text-xl font-semibold mb-2">Transfers</h2>
+                        <h3 className="text-sm text-gray-500 mb-2">Note: Transfer requests are fulfilled after the end of every month.</h3>
                         <div className="mb-4">
                           <Button onClick={() => setShowTransferDialog(true)}>New Transfer</Button>
                         </div>
@@ -1427,7 +1434,7 @@ const handleUnregister = async (
                         
                         <div className="flex-1 overflow-y-auto min-h-0">
                           {purchasesLoading ? (
-                            <p className="text-sm text-gray-500">Loading purchases...</p>
+                            <p className="text-sm text-gray-500">Loading purchase requests...</p>
                           ) : purchases.length ? (
                             <ul className="space-y-4">
                               {purchases.map((t) => (
@@ -1472,31 +1479,30 @@ const handleUnregister = async (
                     </div>
                   </Tabs>
                 </div>
-              </div>
-
-              {/* Ticket Status */}
-              <div className="mt-8 md:mt-8 p-6 bg-white shadow rounded-lg min-h-[150px] md:h-[20vh]">
-                <h2 className="text-xl font-semibold text-center">Ticket Status</h2>
-                <div className="flex items-center justify-center h-full gap-4">
-                  <img
-                    alt="ticket"
-                    src={
-                      curUser["Celebration Ticket"] == 1
-                        ? "/ticket.png"
-                        : "/tickete.png"
-                    }
-                    className="w-24 h-auto"
-                  />
-                  <p className="text-right text-sm sm:text-base max-w-[60%]">
-                    {curUser["Celebration Ticket"] == 1 ? (
-                      <>Hooray! You have a ticket for the End-of-Year Celebration!</>
-                    ) : (
-                      <>
-                        Unfortunately, you don't have a ticket for the End-of-Year
-                        celebration :(. Please contact Dr. Fisher to purchase.
-                      </>
-                    )}
-                  </p>
+                {/* Ticket Status */}
+                <div className="p-4 bg-white shadow rounded-lg col-span-full min-h-[150px] flex-row justify-center">
+                  <h2 className="text-xl font-semibold text-center">Ticket Status</h2>
+                  <div className="flex items-center justify-center gap-4 ">
+                    <img
+                      alt="ticket"
+                      src={
+                        studentData["Celebration Ticket"] == 1
+                          ? "/ticket.png"
+                          : "/tickete.png"
+                      }
+                      className="w-[80px] h-auto"
+                    />
+                    <p className="text-right text-sm sm:text-base max-w-[60%]">
+                      {studentData["Celebration Ticket"] == 1 ? (
+                        <>Hooray! You have a ticket for the End-of-Year Celebration!</>
+                      ) : (
+                        <>
+                          Unfortunately, you don't have a ticket for the End-of-Year
+                          celebration :( Purchase above in shop.
+                        </>
+                      )}
+                    </p>
+                  </div>
                 </div>
               </div>
             </>
@@ -1542,7 +1548,7 @@ const handleUnregister = async (
         <Dialog open={showPurchaseDialog} onOpenChange={setShowPurchaseDialog}>
           <DialogContent>
             <DialogHeader>
-              <DialogTitle>Confirm Purchase</DialogTitle>
+              <DialogTitle>Confirm Purchase Request</DialogTitle>
             </DialogHeader>
             <div className="py-4">
               <p>Item: {selectedItem?.Name}</p>
