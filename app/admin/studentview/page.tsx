@@ -625,7 +625,7 @@ const handleUnregister = async (
       >
         <Analytics />
         <div className="min-h-screen p-6 max-w-5xl w-full flex-row">
-          <header className="mb-8 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
+          <header className="mb-4 sm:mb-8 flex flex-col sm:flex-row justify-between sm:items-center gap-4">
             <div className="flex items-center gap-4">
               <h1 className="text-2xl sm:text-3xl font-bold">Student View</h1>
             </div>
@@ -676,12 +676,12 @@ const handleUnregister = async (
             <>
               <div className="grid grid-cols-1 md:grid-cols-2 gap-2 md:h-[40vh] mb-4 md:mb-0">
                 {/* Pie Chart */}
-                <div className="p-6 bg-white shadow rounded-lg flex flex-col min-h-[340px] md:h-full">
-                  <h2 className="text-xl font-semibold mb-6">Portfolio Breakdown</h2>
+              <div className="p-4 md:p-6 bg-white shadow rounded-lg flex flex-col min-h-[300px] md:h-full">
+                <h2 className="text-xl font-semibold mb-4 sm:mb-6">Portfolio Breakdown</h2>
                   {piechartData ? (
                     <div
                       className={`w-full aspect-square ${
-                        isMobile ? "max-w-[250px]" : "max-w-xs"
+                        isMobile ? "max-w-[px]" : "max-w-sm"
                       } mx-auto flex-1 flex items-center ${
                         isMobile ? "h-[200px]" : "h-[40%]"
                       }`}
@@ -691,11 +691,11 @@ const handleUnregister = async (
                   ) : (
                     <p>No data available</p>
                   )}
-                  <div className="mt-6">
-                    <p className="text-center font-medium">
+                  <div className="mt-2 sm:mt-6">
+                    <p className="text-center text-sm sm:text-md sm:font-medium">
                       Net Worth: {curUser["Net Worth"] || 0} Pelicoin
                     </p>
-                    <div className="flex justify-center mt-4">
+                    <div className="flex justify-center mt-2 sm:mt-4">
                       <Dialog>
                         <DialogTrigger asChild>
                           <Button variant="link" className="text-blue-600">
@@ -1234,22 +1234,22 @@ const handleUnregister = async (
                   </div>
                 </div>
 
-                <div className="min-h-[30vh] md:h-full">
+                <div className="min-h-[320px] md:h-full">
                   <Tabs
                     defaultValue="meetings"
                     className="w-full h-full flex flex-col"
                     onValueChange={(value) => setActiveTab(value)}
                   >
                     <TabsList className="grid w-full grid-cols-4">
-                      <TabsTrigger value="meetings">Meetings</TabsTrigger>
-                      <TabsTrigger value="shop">Shop</TabsTrigger>
-                      <TabsTrigger value="transfers">Transfers</TabsTrigger>
-                      <TabsTrigger value="purchases">Purchases</TabsTrigger>
+                      <TabsTrigger value="meetings" className="text-xs sm:text-sm">Meetings</TabsTrigger>
+                      <TabsTrigger value="shop" className="text-xs sm:text-sm">Shop</TabsTrigger>
+                      <TabsTrigger value="transfers" className="text-xs sm:text-sm">Transfers</TabsTrigger>
+                      <TabsTrigger value="purchases" className="text-xs sm:text-sm">Purchases</TabsTrigger>
                     </TabsList>
                     <div className="relative flex-1">
                       <TabsContent
                         value="meetings"
-                        className="absolute inset-0 p-6 bg-white shadow rounded-lg overflow-hidden flex flex-col"
+                        className="absolute inset-0 p-4 md:p-6 bg-white shadow rounded-lg overflow-hidden flex flex-col"
                         style={{ zIndex: activeTab === "meetings" ? 1 : -1 }}
                       >
                         <h2
