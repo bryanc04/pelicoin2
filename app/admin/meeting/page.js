@@ -126,8 +126,8 @@ export default function UpcomingMeetings() {
     }
 
     const max = Number(newMaxStudents);
-    if (Number.isNaN(max) || !Number.isInteger(max) || max <= 0) {
-      toast.error("Please enter a valid positive integer for max students");
+    if (Number.isNaN(max) || !Number.isInteger(max) || max < 0) {
+      toast.error("Please enter a valid non-negative integer for max students");
       return;
     }
 
