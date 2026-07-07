@@ -100,10 +100,10 @@ export default function UpcomingMeetings() {
     const { error } = await supabase.from("Shop").insert([newItem]);
 
     if (error) {
-      console.error("Error adding meeting:", error);
-      toast.error("Failed to add meeting");
+      console.error("Error adding item:", error);
+      toast.error("Failed to add item");
     } else {
-      toast.success("Meeting added succesfully");
+      toast.success("Item added succesfully");
       handleSubmit();
       setNewItemName("");
       setNewItemPrice(undefined);
@@ -120,8 +120,8 @@ export default function UpcomingMeetings() {
       .match({ Name: item.Name });
 
     if (error) {
-      console.error("Error deleting meeting:", error);
-      toast.error("Failed to delete meeting");
+      console.error("Error deleting item:", error);
+      toast.error("Failed to delete item");
     } else {
       toast.success("Item deleted succesfully");
       fetchData();

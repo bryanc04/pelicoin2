@@ -420,16 +420,32 @@ const Home: React.FC = () => {
     id: any,
     approved: any
   ) => {
+    const {
+      data: { user },
+    } = await supabase.auth.getUser();
+  
+    if (!user) {
+      toast.error("You must be logged in");
+      return;
+    }
+  
     const notif = {
       Category: category,
       Content: content,
       Time: time,
       id: id,
       Approved: approved,
+      user_id: user.id,
     };
-
+  
     const { error } = await supabase.from("Notifications").insert([notif]);
+  
+    if (error) {
+      console.error("Notification insert error:", error);
+      throw error;
+    }
   };
+
   const handlePurchase = async (item: ShopItem) => {
     setSelectedItem(item);
     if (item.requires_custom_input) {
@@ -542,14 +558,7 @@ const Home: React.FC = () => {
     }
 
     try {
-      const { error } = await supabase
-        .from("Pelicoin balances")
-        .update({ Cash: newBalance })
-        .eq("SIS Login ID", curUser["SIS Login ID"]);
-
-      if (error) throw error;
-
-      // Add notification instead of purchase history
+      // Add notification
       const notificationContent = `${curUser["First Name"]} ${
         curUser["Last Name"]
       } purchased ${selectedItem.Name} for ${selectedItem.Price} Pelicoin${
@@ -564,13 +573,11 @@ const Home: React.FC = () => {
         "pending"
       );
 
-      toast.success("Purchase successful!");
+      toast.success("Purchase request submitted!");
       fetchPurchases(curUser);
-      setCurUser({ ...curUser, Cash: newBalance });
-      buildPieChartData({ ...curUser, Cash: newBalance });
     } catch (error) {
       console.error("Purchase error:", error);
-      toast.error("Failed to complete purchase");
+      toast.error("Failed to submit purchase request");
     } finally {
       setShowPurchaseDialog(false);
       setSelectedItem(null);
