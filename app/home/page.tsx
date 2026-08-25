@@ -271,11 +271,7 @@ const Home: React.FC = () => {
         return;
       }
 
-      console.log("Authenticated email:", user.user.email);
-
       const { data, error } = await supabase.from("Pelicoin balances").select();
-
-      console.log("Balance rows returned:", data?.length ?? 0);
 
       if (error) {
         throw error;
@@ -291,8 +287,6 @@ const Home: React.FC = () => {
 
           return externalEmail === authEmail;
         });
-
-        console.log("Found matching balance row:", Boolean(userData));
 
         if (userData) {
           const [lastName = "", firstName = ""] = String(
@@ -946,10 +940,10 @@ const Home: React.FC = () => {
                               <TableCell></TableCell>
                             </TableRow>
                             <TableRow>
-                              <TableCell className="font-bold">
-                                Wage Tier
+                              <TableCell>Wage Tier</TableCell>
+                              <TableCell className="text-right">
+                                {String(curUser["Wage Tier"] ?? "").trim() || "Not assigned"}
                               </TableCell>
-                              <TableCell></TableCell>
                             </TableRow>
                             <TableRow>
                               <TableCell className="font-medium">

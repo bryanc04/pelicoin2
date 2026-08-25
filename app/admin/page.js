@@ -78,6 +78,14 @@ const columnHeaders = [
   "Total Taxes Collected",
 ];
 
+const textColumns = new Set([
+  "Student",
+  "Internal Email",
+  "External Email",
+  "Grad Year",
+  "Celebration Ticket",
+]);
+
 export default function Home() {
   const [dataArray, setDataArray] = useState([]);
   const [loading, setLoading] = useState(true);
