@@ -26,7 +26,10 @@ import { toast, Toaster } from "react-hot-toast";
 import { Analytics } from "@vercel/analytics/react";
 const columnHeaders = [
   "Student",
+  "Internal Email",
+  "External Email",
   "Grad Year",
+  "Wage Tier",
   "Cash",
   "SMG",
   "Current Bonds",
@@ -40,36 +43,39 @@ const columnHeaders = [
   "Loans",
   "Net Worth",
   "Wage Income",
-  "Capital Gains/Loss on Current Stocks",
-  "Capital Gains/Loss in SMG",
+  "Capital Gain/Loss on Current Stocks",
+  "Capital Gain/Loss in SMG",
   "Interest Earned on Current Bonds",
   "Withdrawals from Tax Deferred Accounts",
   "Deposits to Tax Deferred Accounts",
+  "Deductible Charitable Donations",
   "Taxable Income",
-  "Taxes",
+  "Payroll Tax",
+  "Base Income Tax",
+  "Tax on Withdrawal",
   "Net Income",
+  "Last Year's Ending Cash Balance",
+  "Rollover Tax",
   "Beginning Cash",
   "Add Gross Wage Income",
-  "Less Taxes",
+  "New Loans",
+  "Grants Received",
+  "Loan Payments",
+  "Spending",
+  "Sales Tax",
+  "Charitable Donations",
+  "Fees and Penalties",
+  "Ending Cash Balance",
   "Total Stock Purchases",
   "Total Stock Sales",
   "Total Bond Purchases",
   "Total Bond Sales",
   "Celebration Ticket",
-  "Preffered Name",
-  "New Loans",
-  "Grants Received",
-  "Loan Payments",
-  "Spending",
-  "Fees and Penalties",
-  "Ending Cash Balance",
-  "Deductible Charitable Donations",
-  "Charitable Donations",
   "Transfers In",
   "Transfers Out",
-  "Additional Taxes on Capital Gains",
-  "Additional Taxes on Interest",
-  "Total Taxes",
+  "Additional Taxes on All Capital Gains",
+  "Additional Taxes on All Interest Earned",
+  "Total Taxes Collected",
 ];
 
 export default function Home() {
@@ -120,74 +126,242 @@ export default function Home() {
   }, []);
 
   const handleFileUpload = (event) => {
-    const file = event.target.files[0];
+    const file = event.target.files?.[0];
+    const fileInput = event.target;
+  
     if (!file) return;
-
+  
     Papa.parse(file, {
       header: true,
+      skipEmptyLines: "greedy",
+  
+      // Removes extra spaces and a possible hidden markers
+      transformHeader: (header) =>
+        header.replace(/^\uFEFF/, "").trim(),
+  
       complete: async (result) => {
-        let { data, errors } = result;
-
-        if (errors.length > 0) {
-          toast.error("Error parsing CSV file");
-          console.error(errors);
-          return;
-        }
-
-        // Filter out rows with "total" in Student field and sort by Student name
-        data = data
-          .filter((obj) => obj.Student && obj.Student.toLowerCase() !== "total")
-          .sort((a, b) =>
-            a.Student.toLowerCase().localeCompare(b.Student.toLowerCase())
-          )
-          .map((obj) =>
-            Object.fromEntries(
-              Object.entries(obj).map(([key, value]) => [
-                key,
-                value === "" ? "0" : value,
-              ])
-            )
-          );
-          
-        console.log(data);
-        
-        // Compare Supabase data with CSV data and log absent students
-        const supabaseStudents = new Set(
-          supabaseData.map((entry) => entry.Student)
-        );
-        const csvStudents = new Set(data.map((entry) => entry.Student));
-        const removedStudents = new Set();
-
-        supabaseStudents.forEach((student) => {
-          if (!csvStudents.has(student)) {
-            removedStudents.add(student);
+        try {
+          const { data, errors, meta } = result;
+  
+          if (errors.length > 0) {
+            console.error("CSV parsing errors:", errors);
+            toast.error("The CSV could not be parsed.");
+            return;
           }
-        });
-
-        // Update Supabase with the new data
-        const { error } = await supabase.from("Pelicoin balances").upsert(data);
-        // Remove removed students from Supabase
-        const { error: deleteError } = await supabase
-          .from("Pelicoin balances")
-          .delete()
-          .in("Student", Array.from(removedStudents));
-
-        
-        if (deleteError) {
-          console.error("Error deleting old records:", deleteError);
-          toast.error(deleteError.message);
-        } else {
-          toast.success("Old records successfully deleted");
+  
+          const uploadedHeaders = (meta.fields || []).filter(Boolean);
+  
+          const missingColumns = columnHeaders.filter(
+            (column) => !uploadedHeaders.includes(column)
+          );
+  
+          if (missingColumns.length > 0) {
+            console.error("Missing CSV columns:", missingColumns);
+            toast.error(
+              `Missing required column${
+                missingColumns.length === 1 ? "" : "s"
+              }: ${missingColumns.join(", ")}`
+            );
+            return;
+          }
+  
+          const unexpectedColumns = uploadedHeaders.filter(
+            (column) => !columnHeaders.includes(column)
+          );
+  
+          if (unexpectedColumns.length > 0) {
+            console.error("Unexpected CSV columns:", unexpectedColumns);
+            toast.error(
+              `Unexpected column${
+                unexpectedColumns.length === 1 ? "" : "s"
+              }: ${unexpectedColumns.join(", ")}`
+            );
+            return;
+          }
+  
+          const normalizedData = data
+            .filter((row) => {
+              const student = String(row.Student || "").trim();
+  
+              return (
+                student !== "" &&
+                student.toLowerCase() !== "total"
+              );
+            })
+            .map((row, index) => {
+              const normalizedRow = {};
+  
+              columnHeaders.forEach((column) => {
+                const rawValue = String(row[column] ?? "").trim();
+  
+                if (textColumns.has(column)) {
+                  // Text fields remain blank instead of becoming "0"
+                  normalizedRow[column] = rawValue;
+                  return;
+                }
+  
+                if (rawValue === "") {
+                  normalizedRow[column] = 0;
+                  return;
+                }
+  
+                // Supports values such as 1,234.50, $1,234.50, and (123.45)
+                const isNegative =
+                  rawValue.startsWith("(") &&
+                  rawValue.endsWith(")");
+  
+                const cleanedValue = rawValue
+                  .replace(/[$,%\s,]/g, "")
+                  .replace(/[()]/g, "");
+  
+                const numericValue = Number(cleanedValue);
+  
+                if (!Number.isFinite(numericValue)) {
+                  throw new Error(
+                    `Invalid number in CSV row ${
+                      index + 2
+                    }, column "${column}": "${rawValue}"`
+                  );
+                }
+  
+                normalizedRow[column] = isNegative
+                  ? -numericValue
+                  : numericValue;
+              });
+  
+              return normalizedRow;
+            })
+            .sort((a, b) =>
+              a.Student.toLowerCase().localeCompare(
+                b.Student.toLowerCase()
+              )
+            );
+  
+          if (normalizedData.length === 0) {
+            toast.error("The CSV contains no student records.");
+            return;
+          }
+  
+          // Student is the database primary key
+          const seenStudents = new Set();
+          const duplicateStudents = new Set();
+  
+          normalizedData.forEach((row) => {
+            const normalizedStudent = row.Student
+              .trim()
+              .toLowerCase();
+  
+            if (seenStudents.has(normalizedStudent)) {
+              duplicateStudents.add(row.Student);
+            }
+  
+            seenStudents.add(normalizedStudent);
+          });
+  
+          if (duplicateStudents.size > 0) {
+            toast.error(
+              `Duplicate student name${
+                duplicateStudents.size === 1 ? "" : "s"
+              }: ${Array.from(duplicateStudents).join(", ")}`
+            );
+            return;
+          }
+  
+          const csvStudents = new Set(
+            normalizedData.map((row) => row.Student.trim().toLowerCase())
+          );
+  
+          const removedStudents = supabaseData
+            .map((row) => row.Student)
+            .filter(
+              (student) =>
+                student && !csvStudents.has(student.trim().toLowerCase())
+            );
+  
+          // Ask before making any database changes.
+          if (removedStudents.length > 0) {
+            const preview = removedStudents
+              .slice(0, 10)
+              .join("\n");
+  
+            const remainingCount =
+              removedStudents.length - 10;
+  
+            const confirmed = window.confirm(
+              `${removedStudents.length} student${
+                removedStudents.length === 1 ? "" : "s"
+              } from Supabase are absent from this CSV and will be deleted:\n\n` +
+                preview +
+                (remainingCount > 0
+                  ? `\n...and ${remainingCount} more`
+                  : "") +
+                "\n\nContinue with the upload?"
+            );
+  
+            if (!confirmed) {
+              toast("Upload cancelled. No data was changed.");
+              return;
+            }
+          }
+  
+          // Upsert first. Nothing is deleted if the upsert fails.
+          const { error: upsertError } = await supabase
+            .from("Pelicoin balances")
+            .upsert(normalizedData, {
+              onConflict: "Student",
+            });
+  
+          if (upsertError) {
+            console.error(
+              "Error updating Supabase:",
+              upsertError
+            );
+            toast.error(upsertError.message);
+            return;
+          }
+  
+          if (removedStudents.length > 0) {
+            const { error: deleteError } = await supabase
+              .from("Pelicoin balances")
+              .delete()
+              .in("Student", removedStudents);
+  
+            if (deleteError) {
+              console.error(
+                "CSV uploaded, but absent students were not deleted:",
+                deleteError
+              );
+              toast.error(
+                `Data uploaded, but deletion failed: ${deleteError.message}`
+              );
+  
+              setDataArray(normalizedData);
+              setSupabaseData(normalizedData);
+              return;
+            }
+          }
+  
+          setDataArray(normalizedData);
+          setSupabaseData(normalizedData);
+          toast.success("CSV uploaded successfully.");
+        } catch (error) {
+          console.error("Unexpected CSV upload error:", error);
+  
+          toast.error(
+            error instanceof Error
+              ? error.message
+              : "An unexpected upload error occurred."
+          );
+        } finally {
+          // Allows the same file to be selected again.
+          fileInput.value = "";
         }
-
-
-        if (error) {
-          console.error("Error updating Supabase:", error);
-          toast.error(error.message);
-        } else {
-          toast.success("Data successfully uploaded");
-          setDataArray(data); // this will be completely updated when it runs since it's from the CSV
-        }
+      },
+  
+      error: (error) => {
+        console.error("Unable to read CSV:", error);
+        toast.error("The CSV file could not be read.");
+        fileInput.value = "";
       },
     });
   };

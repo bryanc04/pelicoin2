@@ -401,7 +401,7 @@ const AdminStudentView = () => {
       const { error } = await supabase
         .from("Pelicoin balances")
         .update({ Cash: newBalance })
-        .eq("Internal Email", studentData["Internal Email"]);
+        .eq("External Email", studentData["External Email"]);
 
       if (error) throw error;
 

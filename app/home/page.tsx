@@ -271,7 +271,11 @@ const Home: React.FC = () => {
         return;
       }
 
+      console.log("Authenticated email:", user.user.email);
+
       const { data, error } = await supabase.from("Pelicoin balances").select();
+
+      console.log("Balance rows returned:", data?.length ?? 0);
 
       if (error) {
         throw error;
@@ -279,19 +283,16 @@ const Home: React.FC = () => {
 
       if (data && data.length > 0) {
         const authEmail = user.user.email.trim().toLowerCase();
-        const emailUsername = authEmail.split("@")[0];
-        
+
         const userData = data.find((u) => {
-          const internalEmail = String(u["Internal Email"] || "")
+          const externalEmail = String(u["External Email"] || "")
             .trim()
             .toLowerCase();
 
-          // Supports old username-only data and the new full-email format
-          return (
-            internalEmail === authEmail ||
-            internalEmail === emailUsername
-          );
+          return externalEmail === authEmail;
         });
+
+        console.log("Found matching balance row:", Boolean(userData));
 
         if (userData) {
           const [lastName = "", firstName = ""] = String(
@@ -666,6 +667,16 @@ const Home: React.FC = () => {
     return null; // Let the router handle the redirect
   }
 
+  if (!curUser) {
+    return (
+      <div className="flex items-center justify-center min-h-screen">
+        <p className="text-center">
+          Your Pelicoin profile could not be found. Please contact an administrator.
+        </p>
+      </div>
+    );
+  }
+
   return (
     <div className="min-h-screen bg-gray-50 py-8 px-4 flex items-center">
       <Toaster />
@@ -931,6 +942,12 @@ const Home: React.FC = () => {
                             <TableRow>
                               <TableCell className="font-bold">
                                 Earnings
+                              </TableCell>
+                              <TableCell></TableCell>
+                            </TableRow>
+                            <TableRow>
+                              <TableCell className="font-bold">
+                                Wage Tier
                               </TableCell>
                               <TableCell></TableCell>
                             </TableRow>
