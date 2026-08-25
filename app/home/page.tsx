@@ -278,24 +278,29 @@ const Home: React.FC = () => {
       }
 
       if (data && data.length > 0) {
-        let userData = null;
-        data.forEach((u) => {
-          if (
-            u["SIS Login ID"] &&
-            user.user["user_metadata"]["preferred_username"]
-          ) {
-            if (
-              u["SIS Login ID"].toLowerCase() ===
-              user.user["user_metadata"]["preferred_username"].toLowerCase()
-            ) {
-              u["First Name"] = u["Student"].split(",")[1].trim();
-              u["Last Name"] = u["Student"].split(",")[0].trim();
-              userData = u;
-            }
-          }
+        const authEmail = user.user.email.trim().toLowerCase();
+        const emailUsername = authEmail.split("@")[0];
+        
+        const userData = data.find((u) => {
+          const internalEmail = String(u["Internal Email"] || "")
+            .trim()
+            .toLowerCase();
+
+          // Supports old username-only data and the new full-email format
+          return (
+            internalEmail === authEmail ||
+            internalEmail === emailUsername
+          );
         });
 
         if (userData) {
+          const [lastName = "", firstName = ""] = String(
+            userData["Student"] || ""
+          ).split(",");
+      
+          userData["First Name"] = firstName.trim();
+          userData["Last Name"] = lastName.trim();
+      
           setCurUser(userData);
           buildPieChartData(userData);
           await fetchTransfers(userData);
