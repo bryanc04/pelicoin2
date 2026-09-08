@@ -687,7 +687,7 @@ const Home: React.FC = () => {
               className="bg-blue-50 hover:bg-blue-100 text-blue-600 border-blue-300 w-full sm:w-auto"
               onClick={() =>
                 window.open(
-                  "https://loomischaffeeschool-my.sharepoint.com/:w:/g/personal/lfisher_internal_loomis_org/ESp4JiuylpZGpv9HvBEYZOABceOGQnCSgcAfJj_K91jbtg?e=38froa",
+                  "https://loomischaffeeschool-my.sharepoint.com/:w:/r/personal/lfisher_internal_loomis_org/Documents/B%20-%20Financial%20Literacy/Planning/2026-2027/Financial%20Literacy%202026%20Revised%20Program.%20Information.docx?d=w6615c893e4c74974bcaca6667f20b6ac&csf=1&web=1&e=HhPygB",
                   "_blank"
                 )
               }
@@ -1511,6 +1511,18 @@ const Home: React.FC = () => {
                   Unfortunately, you don't have a ticket for the End-of-Year
                   celebration :( Purchase above in shop.
                 </>
+              )}
+            </p>
+          </div>
+        </div>
+
+        {/* Pelicoin Disclaimer */}
+        <div className="mt-8 p-4 bg-white shadow rounded-lg min-h-[80px]">
+          <h2 className="text-xl font-semibold text-center text-red-600 m-1">Disclaimer</h2>
+          <div className="flex items-center justify-center gap-4">
+            <p className="text-center text-sm sm:text-base max-w-[76%]">
+              {(
+                <>Pelicoin is the Financial Literacy Program's virtual educational currency used for simulation. All values listed in statements are Pelicoin value and do not hold any cash value.</>
               )}
             </p>
           </div>

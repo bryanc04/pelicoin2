@@ -906,6 +906,12 @@ const handleUnregister = async (
                                     <TableCell></TableCell>
                                   </TableRow>
                                   <TableRow>
+                                    <TableCell>Wage Tier</TableCell>
+                                    <TableCell className="text-right">
+                                      {String(curUser["Wage Tier"] ?? "").trim() || "Not assigned"}
+                                    </TableCell>
+                                  </TableRow>
+                                  <TableRow>
                                     <TableCell className="font-medium">
                                       Wage Income
                                     </TableCell>
@@ -1493,8 +1499,19 @@ const handleUnregister = async (
                     ) : (
                       <>
                         Unfortunately, you don't have a ticket for the End-of-Year
-                        celebration :(. Please contact Dr. Fisher to purchase.
+                        celebration :(. Purchase above in shop.
                       </>
+                    )}
+                  </p>
+                </div>
+              </div>
+              {/* Pelicoin Disclaimer */}
+              <div className="mt-8 p-4 bg-white shadow rounded-lg min-h-[80px]">
+                <h2 className="text-xl font-semibold text-center text-red-600 m-1">Disclaimer</h2>
+                <div className="flex items-center justify-center gap-4">
+                  <p className="text-center text-sm sm:text-base max-w-[76%]">
+                    {(
+                      <>Pelicoin is the Financial Literacy Program's virtual educational currency used for simulation. All values listed in statements are Pelicoin value and do not hold any cash value.</>
                     )}
                   </p>
                 </div>
