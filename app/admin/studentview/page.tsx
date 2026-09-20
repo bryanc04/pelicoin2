@@ -1317,7 +1317,7 @@ const handleUnregister = async (
                                           )
                                         }
                                       >
-                                        {isFull ? "Full" : "Sign Up"}
+                                        {meetingMax === 0? "No signup required": isFull? "Full": "Sign Up"}
                                       </Button>
                                     )}
                                   </li>
