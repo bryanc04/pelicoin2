@@ -1391,6 +1391,9 @@ const Home: React.FC = () => {
                   <div className="mb-4">
                     <Button onClick={() => setShowTransferDialog(true)}>New Transfer</Button>
                   </div>
+                  <p className="mb-4 text-sm text-gray-500">
+                  Transfers take place at the end of each month. <br /> Transfer requests received after the 3rd will be processed the following month.
+                  </p>
                   <div className="flex-1 overflow-y-auto min-h-0">
                     {transfersLoading ? (
                       <p className="text-sm text-gray-500">Loading transfers…</p>
