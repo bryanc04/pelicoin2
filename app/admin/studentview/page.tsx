@@ -214,7 +214,7 @@ const AdminStudentView = () => {
 
   const fetchMeetings = async () => {
     try {
-      const { data, error } = await supabase.from("Meetings").select();
+      const { data, error } = await supabase.from("Meetings").select().order("Date", { ascending: true });;
       if (error) throw error;
       setMeetings(data || []);
     } catch (error) {

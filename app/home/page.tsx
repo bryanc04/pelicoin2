@@ -34,6 +34,7 @@ import { max } from "date-fns";
 ChartJS.register(ArcElement, Tooltip, Legend);
 
 interface Meeting {
+  id: number;
   Topic: string;
   Date: string;
   Attendees?: string[];
@@ -308,109 +309,80 @@ const Home: React.FC = () => {
   };
 
   const handleSignUp = async (
+    meetingId: number,
     meetingTopic: string,
-    attendees: string[],
-    meetingdate: any
+    meetingdate: string
   ) => {
     setLoading(true);
-
-    const maxStudents = extractMaxFromTopic(meetingTopic);
-
-    // Check if meeting is full
-    if ((attendees.length || 0 ) >= maxStudents) {
-      toast.error("This meeting is full!");
+  
+    try {
+      const { data: studentName, error } = await supabase.rpc(
+        "register_for_meeting",
+        { p_meeting_id: meetingId }
+      );
+  
+      if (error) throw error;
+  
+      await fetchMeetings();
+      toast.success(`Signed up for ${extractTopicFromTopic(meetingTopic)} Successfully!`);
+  
+      try {
+        await addNotification(
+          "Sign Ups",
+          `${studentName} signed up for ${extractTopicFromTopic(meetingTopic)} on ${formatDate(meetingdate)}`,
+          new Date(),
+          Math.floor(Math.random() * 1000000000000000),
+          true
+        );
+      } catch (notificationError) {
+        console.error("Notification failed:", notificationError);
+      }
+  
+    } catch (error: any) {
+      console.error("Signup error:", error);
+      toast.error(error.message || "Failed to sign up.");
+    } finally {
       setLoading(false);
-      return;
     }
-
-    if (
-      attendees.includes(curUser["First Name"] + " " + curUser["Last Name"])
-    ) {
-      alert("Already signed up!");
-      setLoading(false);
-      return;
-    }
-
-    const newAttendees = [
-      ...attendees,
-      `${curUser["First Name"]} ${curUser["Last Name"]}`,
-    ];
-
-    const { data, error } = await supabase
-      .from("Meetings")
-      .update({ Attendees: newAttendees })
-      .eq("Topic", meetingTopic)
-      .select("Topic, Attendees");
-
-    // console.log(data);
-    // if (data !== null){
-    //   console.log(data[0].Attendees.length);
-    // }
-
-
-    if (error || !data || data[0].Attendees.length === attendees.length || !data[0].Attendees.includes(`${curUser["First Name"]} ${curUser["Last Name"]}`)) {
-      alert("Failed to sign up.");
-      return;
-    }
-
-    fetchMeetings();
-    toast.success(`Signed up for ${meetingTopic} Successfully!`);
-    addNotification(
-      "Sign Ups",
-      `${curUser["First Name"]} ${
-        curUser["Last Name"]
-      } signed up for ${meetingTopic} on ${formatDate(meetingdate)}`,
-      new Date(),
-      Math.floor(Math.random() * 1000000000000000),
-      true
-    );
-    setLoading(false);
-    
   };
 
   // New function to handle unregistering from meetings
   const handleUnregister = async (
+    meetingId: number,
     meetingTopic: string,
-    attendees: string[],
     meetingdate: string
   ) => {
     setLoading(true);
-
-    const currentUserName = `${curUser["First Name"]} ${curUser["Last Name"]}`;
-
-    if (!attendees.includes(currentUserName)) {
-      alert("You are not registered for this meeting!");
-      setLoading(false);
-      return;
-    }
-
-    // Filter out the current user from the attendees list
-    const updatedAttendees = attendees.filter(
-      (name) => name !== currentUserName
-    );
-
-    const { error } = await supabase
-      .from("Meetings")
-      .update({ Attendees: updatedAttendees })
-      .eq("Topic", meetingTopic);
-
-    if (!error) {
-      fetchMeetings();
-      toast.success("Succesfully unregistered from " + meetingTopic);
-      addNotification(
-        "Un-registers",
-        `${curUser["First Name"]} ${
-          curUser["Last Name"]
-        } unregistered up from ${meetingTopic} on ${formatDate(meetingdate)}`,
-        new Date(),
-        Math.floor(Math.random() * 1000000000000000),
-        true
+  
+    try {
+      const { data: studentName, error } = await supabase.rpc(
+        "unregister_from_meeting",
+        { p_meeting_id: meetingId }
       );
-    } else {
-      alert("Failed to unregister from meeting.");
+  
+      if (error) throw error;
+  
+      await fetchMeetings();
+      toast.success("Succesfully unregistered from " + extractTopicFromTopic(meetingTopic));
+  
+      try {
+        await addNotification(
+          "Un-registers",
+          `${studentName} unregistered from ${extractTopicFromTopic(meetingTopic)} on ${formatDate(meetingdate)}`,
+          new Date(),
+          Math.floor(Math.random() * 1000000000000000),
+          true
+        );
+      } catch (notificationError) {
+        console.error("Notification failed:", notificationError);
+      }
+  
+    } catch (error: any) {
+      console.error("Unregister error:", error);
+      toast.error(error.message || "Failed to unregister.");
+    } finally {
+      setLoading(false);
     }
-
-    setLoading(false);
   };
 
   const addNotification = async (
@@ -1308,8 +1280,8 @@ const Home: React.FC = () => {
                                   disabled={loading}
                                   onClick={() =>
                                     handleUnregister(
+                                      meeting.id,
                                       meeting.Topic,
-                                      meeting.Attendees || [],
                                       meeting.Date
                                     )
                                   }
@@ -1322,8 +1294,8 @@ const Home: React.FC = () => {
                                   disabled={loading || isFull}
                                   onClick={() =>
                                     handleSignUp(
+                                      meeting.id,
                                       meeting.Topic,
-                                      meeting.Attendees || [],
                                       meeting.Date
                                     )
                                   }
