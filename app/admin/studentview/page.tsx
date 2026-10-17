@@ -501,9 +501,9 @@ const AdminStudentView = () => {
     toast.success(`Signed up for ${meetingTopic} Successfully!`);
     addNotification(
       "Sign Ups",
-      `${studentData["First Name"]} ${
+      `Admin registered ${studentData["First Name"]} ${
         studentData["Last Name"]
-      } signed up for ${meetingTopic} on ${formatDate(meetingdate)}`,
+      } from ${meetingTopic} on ${formatDate(meetingdate)}`,
       new Date(),
       Math.floor(Math.random() * 1000000000000000),
       true
