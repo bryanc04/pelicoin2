@@ -1331,11 +1331,19 @@ const handleUnregister = async (
                       </TabsContent>
                       <TabsContent
                         value="shop"
-                        className="absolute inset-0 p-6 bg-white shadow rounded-lg overflow-hidden flex flex-col"
+                        className="absolute inset-0 p-6 bg-white shadow rounded-lg overflow-hidden flex flex-col min-h-0"
                         style={{ zIndex: activeTab === "shop" ? 1 : -1 }}
                       >
                         <h2 className="text-xl font-semibold mb-4">Shop</h2>
-                        <div className="flex-1 overflow-y-auto min-h-0">
+                        <div
+                          className="flex-1 min-h-0 overflow-y-auto overscroll-contain touch-pan-y"
+                          style={{ WebkitOverflowScrolling: "touch" }}
+                        >
+                          <p className="mb-4 text-sm text-gray-500">
+                          All purchases except for the celebration ticket are subject to 6.35% sales tax. 
+                            <br /> Please input the amount you want before tax. 
+                            <br /> Please make sure you have enough Pelicoin to include tax.
+                          </p>
                           {shop.length > 0 ? (
                             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                               {shop.map((item) => (
@@ -1373,17 +1381,23 @@ const handleUnregister = async (
                       </TabsContent>
                       <TabsContent
                         value="transfers"
-                        className="absolute inset-0 p-6 bg-white shadow rounded-lg overflow-hidden flex flex-col"
-                        style={{ zIndex: activeTab === "transfers" ? 1 : -1 }}
+                        className="absolute inset-0 p-6 bg-white shadow rounded-lg overflow-hidden flex flex-col min-h-0"
+                        style={{
+                          zIndex: activeTab === "transfers" ? 1 : -1,
+                          pointerEvents: activeTab === "transfers" ? "auto" : "none",
+                        }}
                       >
                         <h2 className="text-xl font-semibold mb-4">Transfers</h2>
                         <div className="mb-4">
                           <Button onClick={() => setShowTransferDialog(true)}>New Transfer</Button>
                         </div>
-                        <p className="mb-4 text-sm text-gray-500">
-                          Transfers take place at the end of each month. <br /> Transfer requests received after the 3rd will be processed the following month.
-                        </p>
-                        <div className="flex-1 overflow-y-auto min-h-0">
+                        <div
+                          className="flex-1 min-h-0 overflow-y-auto overscroll-contain touch-pan-y"
+                          style={{ WebkitOverflowScrolling: "touch" }}
+                        >
+                          <p className="mb-4 text-sm text-gray-500">
+                            Transfers take place at the end of each month. <br /> Transfer requests received after the 3rd will be processed the following month.
+                          </p>
                           {transfersLoading ? (
                             <p className="text-sm text-gray-500">Loading transfers…</p>
                           ) : transfers.length ? (

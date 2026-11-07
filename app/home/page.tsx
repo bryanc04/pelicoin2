@@ -659,7 +659,7 @@ const Home: React.FC = () => {
               className="bg-blue-50 hover:bg-blue-100 text-blue-600 border-blue-300 w-full sm:w-auto"
               onClick={() =>
                 window.open(
-                  "https://loomischaffeeschool-my.sharepoint.com/:w:/r/personal/lfisher_internal_loomis_org/Documents/B%20-%20Financial%20Literacy/Planning/2026-2027/Financial%20Literacy%202026%20Revised%20Program.%20Information.docx?d=w6615c893e4c74974bcaca6667f20b6ac&csf=1&web=1&e=HhPygB",
+                  "https://loomischaffeeschool-my.sharepoint.com/my?id=%2Fpersonal%2Fjkim28%5Finternal%5Floomis%5Forg%2FDocuments%2FAttachments%2FFinancial%20Literacy%202026%20Revised%20Program%2E%20Information%2Epdf&parent=%2Fpersonal%2Fjkim28%5Finternal%5Floomis%5Forg%2FDocuments%2FAttachments&ga=1",
                   "_blank"
                 )
               }
@@ -1314,11 +1314,19 @@ const Home: React.FC = () => {
                 </TabsContent>
                 <TabsContent
                   value="shop"
-                  className="absolute inset-0 p-6 bg-white shadow rounded-lg overflow-hidden flex flex-col"
+                  className="absolute inset-0 p-6 bg-white shadow rounded-lg overflow-hidden flex flex-col min-h-0"
                   style={{ zIndex: activeTab === "shop" ? 1 : -1 }}
                 >
                   <h2 className="text-xl font-semibold mb-4">Shop</h2>
-                  <div className="flex-1 overflow-y-auto min-h-0">
+                  <div
+                    className="flex-1 min-h-0 overflow-y-auto overscroll-contain touch-pan-y"
+                    style={{ WebkitOverflowScrolling: "touch" }}
+                  >
+                  <p className="mb-4 text-sm text-gray-500">
+                  All purchases except for the celebration ticket are subject to 6.35% sales tax. 
+                    <br /> Please input the amount you want before tax. 
+                    <br /> Please make sure you have enough Pelicoin to include tax.
+                  </p>
                     {shop.length > 0 ? (
                       <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                         {shop.map((item) => (
@@ -1356,17 +1364,23 @@ const Home: React.FC = () => {
                 </TabsContent>
                 <TabsContent
                   value="transfers"
-                  className="absolute inset-0 p-6 bg-white shadow rounded-lg overflow-hidden flex flex-col"
-                  style={{ zIndex: activeTab === "transfers" ? 1 : -1 }}
+                  className="absolute inset-0 p-6 bg-white shadow rounded-lg overflow-hidden flex flex-col min-h-0"
+                  style={{
+                    zIndex: activeTab === "transfers" ? 1 : -1,
+                    pointerEvents: activeTab === "transfers" ? "auto" : "none",
+                  }}
                 >
                   <h2 className="text-xl font-semibold mb-4">Transfers</h2>
                   <div className="mb-4">
                     <Button onClick={() => setShowTransferDialog(true)}>New Transfer</Button>
                   </div>
-                  <p className="mb-4 text-sm text-gray-500">
-                  Transfers take place at the end of each month. <br /> Transfer requests received after the 3rd will be processed the following month.
-                  </p>
-                  <div className="flex-1 overflow-y-auto min-h-0">
+                  <div
+                    className="flex-1 min-h-0 overflow-y-auto overscroll-contain touch-pan-y"
+                    style={{ WebkitOverflowScrolling: "touch" }}
+                  >
+                    <p className="mb-4 text-sm text-gray-500">
+                      Transfers take place at the end of each month. <br /> Transfer requests received after the 3rd will be processed the following month.
+                    </p>
                     {transfersLoading ? (
                       <p className="text-sm text-gray-500">Loading transfers…</p>
                     ) : transfers.length ? (
